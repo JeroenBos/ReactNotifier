@@ -18,15 +18,22 @@
   },
   "devDependencies": {
     "@types/chai": "3.4.34",
+    "@types/enzyme": "3.9.1",
+    "@types/enzyme-adapter-react-16": "1.0.5",
     "@types/glob": "7.1.0",
     "@types/mocha": "5.2.6",
     "@types/webpack-env": "1.13.6",
     "awesome-typescript-loader": "5.2.1",
     "chai": "4.1.2",
     "clean-webpack-plugin": "0.1.19",
+    "enzyme": "3.9.0",
+    "enzyme-adapter-react-16": "1.12.1",
     "glob": "7.1.3",
+    "jsdom": "14.0.0",
+    "jsdom-global": "3.0.2",
     "mocha": "6.0.2",
     "mocha-typescript": "1.1.12",
+    "reflect-metadata": "0.1.12",
     "source-map-loader": "0.2.4",
     "ts-loader": "5.3.3",
     "ts-node": "7.0.1",
@@ -34,7 +41,8 @@
     "webpack": "4.29.6",
     "webpack-cli": "3.2.3",
     "webpack-config-utils": "2.3.0",
-    "webpack-dev-server": "3.2.1"
+    "webpack-dev-server": "3.2.1",
+    "webpack-node-externals": "1.7.2"
   },
   "directories": {
     "test": "tests"
@@ -44,8 +52,6 @@
     "url": "git+https://github.com/JeroenBos/ReactNotifier.git"
   },
   "keywords": [
-    "type guard",
-    "type safety"
   ],
   "bugs": {
     "url": "https://github.com/JeroenBos/ReactNotifier/issues"
