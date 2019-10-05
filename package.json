@@ -1,10 +1,11 @@
 {
   "name": "jbsnorro-reactnotifier",
   "version": "0.0.1",
-  "description": "A small library for mapping changes (from ASP.NET Core) onto TypeScript/React components.",
+  "description": "A library for mapping changes (from ASP.NET Core) onto TypeScript/React components.",
   "main": "dist/jbsnorro_reactnotifier.js",
   "types": "dist/jbsnorro_reactnotifier.d.ts",
   "scripts": {
+    "prepublishOnly": "npm install && webpack && mocha dist/test.js",
     "build": "webpack",
     "watch": "webpack --watch",
     "buildAndTest": "webpack && mocha dist/test.js",
@@ -14,6 +15,7 @@
   "author": "Jeroen Bos",
   "license": "ISC",
   "dependencies": {
+    "jbsnorro": "0.0.1",
     "jbsnorro-typesafety": "0.9.13"
   },
   "devDependencies": {
@@ -51,8 +53,7 @@
     "type": "git",
     "url": "git+https://github.com/JeroenBos/ReactNotifier.git"
   },
-  "keywords": [
-  ],
+  "keywords": [],
   "bugs": {
     "url": "https://github.com/JeroenBos/ReactNotifier/issues"
   },
