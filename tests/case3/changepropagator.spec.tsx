@@ -361,6 +361,7 @@ function extract<C extends Component, P_Child = never, S_Child = never, P = C['p
 
 
 import { OptionalToMissing, createCreateFunction, PrimitiveTypes, TypeSystem, nullable, BaseTypeDescriptions, TypeDescriptionsFor } from 'jbsnorro-typesafety';
+import { CommandManagerProps, CommandManagerState } from '../../commands/abstractCommandManager';
 
 const create = <T extends object>() => createCreateFunction<CheckableTypes & PrimitiveTypes, T>();
 
@@ -380,6 +381,9 @@ export type CheckableTypes = OptionalToMissing<{
     'RootWithNestedCounterFromPropsState': RootWithNestedCounterFromPropsState,
     'RootWithNestedRootProps': RootWithNestedRootProps,
     'RootWithNestedRootState': RootWithNestedRootState,
+    'CommandManagerProps': CommandManagerProps,
+    'nullable CommandManagerProps': CommandManagerProps | null,
+    'CommandManagerState': CommandManagerState,
 }>
 
 export class AllTypeDescriptions extends BaseTypeDescriptions implements TypeDescriptionsFor<CheckableTypes> {
@@ -398,6 +402,9 @@ export class AllTypeDescriptions extends BaseTypeDescriptions implements TypeDes
     public readonly 'RootWithNestedCounterFromPropsState' = create<RootWithNestedCounterFromPropsState>()({ counter: 'nullable CounterFromProps', stateCounter: 'nullable CounterProps' });
     public readonly 'RootWithNestedRootProps' = this['EmptyRootProps'];
     public readonly 'RootWithNestedRootState' = create<RootWithNestedRootState>()({ nestedComponent: 'nullable CounterProps' });
+    public readonly 'CommandManagerProps' = create<CommandManagerProps>()({ server: 'any!', __id: 'number' });
+    public readonly 'nullable CommandManagerProps' = nullable(this['CommandManagerProps']);
+    public readonly 'CommandManagerState' = create<CommandManagerState>()({ commands: 'any!', flags: 'any!', inputBindings: 'any!' });
 }
 
 export const typesystem = new TypeSystem<CheckableTypes & PrimitiveTypes>(new AllTypeDescriptions(), console.error);
