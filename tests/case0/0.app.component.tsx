@@ -13,19 +13,15 @@ export class AppComponent extends BaseComponent<AppProps, AppState> {
         };
     }
 
-    protected get reactInfo(): any {
-        return {
-            counter: (key: keyof Exclude<AppState['counter'], null | undefined>) => {
-                // returns whether AppState.counter[key] is state of counter (true); or props otherwise. 
-                return false;
-            }
-        };
-    }
-
     public get stateInfo(): SimpleStateInfo<AppProps, AppState> {
         return {
-            // counter is not a component, so it is missing here
+            // counter is on state, so it is missing here
         };
+    }
+    isComponent(propertyName: string | number) {
+        if (propertyName == 'counter')
+            return false;
+        return super.isComponent(propertyName);
     }
 
     render(): React.ReactNode {

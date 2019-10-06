@@ -23,4 +23,4 @@ export class AllTypeDescriptions0 extends BaseTypeDescriptions implements TypeDe
     public readonly 'nullable Counter' = nullable(this['Counter']);
 }
 
-export const typesystem = new TypeSystem(new AllTypeDescriptions0());
+export const typesystem = new TypeSystem(new AllTypeDescriptions0(), console.error);
