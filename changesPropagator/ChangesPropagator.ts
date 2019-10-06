@@ -1,14 +1,14 @@
 import 'rxjs/add/operator/toPromise';
-import { AsynchronousCollectionEditorSolver } from './AsynchronousCollectionEditorSolver';
 import { IChangePropagator, IComponent, BaseProps, BaseState, UNINITIALIZED_ID, isReference } from '../base.interfaces';
 import { CommandInstruction } from './../commands/commandInstruction';
 import { Http } from './http';
-import { groupBy, Grouping, deepMerge, deepMergeInPlace, Omit } from '../core';
-import { SerializedComponentProps, SerializedType, AdmissiblePrimitiveType, StateType, isComponentProps, isComponent } from './common';
-import { SimpleStateInfo } from '../base.component';
-import container from '../IoC/container';
-import { assert, assertAreIdentical, undefinedToFalse, isDevelopment } from 'jbsnorro';
+import { SerializedType, StateType, isComponentProps, isComponent } from './common';
+import { SimpleStateInfo, StateInfoLocalHelper } from '../base.component';
+import { assert, undefinedToFalse, isDevelopment, assertAreIdentical } from 'jbsnorro';
+import { groupBy } from '../core';
+import { isFunction } from 'util';
 
+type StateInfo = any;
 type PropertyChange = (IPropertyChange | ICollectionItemAdded) & ComponentType & { isPropsChange: boolean };
 type ComponentType = {
     component: IComponent,
@@ -18,7 +18,11 @@ type ComponentType = {
 type PartialPropertyChange = (IPropertyChange | ICollectionItemAdded) & { path: Relation[] };
 type Change = IPropertyChange;
 type ViewModel = { __id: number };
-class Relation {
+interface PartialRelation {
+    readonly propertyName: string | number;
+    readonly parentId: number
+}
+class Relation implements PartialRelation {
     private _isComponent: boolean | undefined = undefined;
     constructor(public readonly childId: number, public readonly propertyName: string | number, public readonly parentId: number) { }
     /** Gets whether the child in this relation is a component. */
@@ -31,6 +35,34 @@ class Relation {
         if (value === undefined)
             throw new Error(`You cannot specified 'undefined'`);
         this._isComponent = value;
+    }
+
+    /**
+     * Gets whether when this relation would be set, whether it should be on the grandparent rather than parent.
+     */
+    public isPropsChange(allComponents: Map<number, IComponent>, parents: Map<number, Relation>): boolean {
+        if (!this.isComponent)
+            return true;
+
+
+
+        // const grandparentRelation = parents.get(this.parentId);
+        // if (grandparentRelation === undefined) {
+        //     // if parent is a root
+        //     return false;
+        // }
+
+        const propertyName = this.propertyName;
+
+        const component = allComponents.get(this.parentId);
+        if (component === undefined) {
+            // container hasn't registered yet
+            throw new Error('not implemented');
+        }
+        else {
+            assert(propertyName in component.props || propertyName in component.state);
+            return propertyName in component.props;
+        }
     }
 };
 export class ChangesPropagator implements IChangePropagator {
@@ -97,7 +129,6 @@ export class ChangesPropagator implements IChangePropagator {
     }
 
     private processResponse(response: IResponse) {
-        debugger;
         response.changes.forEach(change => assert(change.id >= 0, 'change with negative id specified'));
         const clonedResponse: IResponse = JSON.parse(JSON.stringify(response));
         const changesWithoutRootRefs = clonedResponse.changes.filter(change => {
@@ -150,11 +181,11 @@ export class ChangesPropagator implements IChangePropagator {
                             // this could still be possible, where the root hasn't registered yet...
                             // leave relation.isComponent to undefined. It will get sorted out on registration of the root
                         } else {
-                            debugger;
-                            throw new Error('parentRelation.isComponent is true, but the parent is not a component? :S ');  // note that parentRelation is from the parent to the grandparent
+                            // I suppose this could happen when a parent component hasn't registered yet
+                            // throw new Error('parentRelation.isComponent is true, but the parent is not a component? :S ');  // note that parentRelation is from the parent to the grandparent
                         }
                     } else {
-                        relation.isComponent = relation.propertyName in parent.stateInfo;
+                        relation.isComponent = parent.isComponent(relation.propertyName);
                     }
                 } else {
                     this.assertNoAncestorIsObject(change.id);
@@ -194,8 +225,8 @@ export class ChangesPropagator implements IChangePropagator {
                     return false;
                 }
                 // SPEC: if the change is on the state of the component, it is dangling 
-                const isParentChange = this.toParentChangeIfNecessary(change);
-                const isState = !isParentChange.isPropsChange;
+                const isParentChange = this.isParentChange(change);
+                const isState = !isParentChange;
                 return isState;
             }
             // SPEC: if relation.isComponent === undefined, it is dangling
@@ -210,7 +241,7 @@ export class ChangesPropagator implements IChangePropagator {
 
         const { setStateChanges, danglingChanges } = this.filterOutDanglingChanges(sortedChanges, isDangling);
 
-        const changesAtComponents: PropertyChange[] = setStateChanges.map(change => this.toParentChangeIfNecessary(change));
+        // const changesAtComponents: PropertyChange[] = setStateChanges.map(change => this.getComponentOnWhichToDoTheChange(change));
 
         // merge dangling states into known dangling states
         for (const danglingChange of danglingChanges) {
@@ -231,63 +262,73 @@ export class ChangesPropagator implements IChangePropagator {
             }
         }
 
-        for (const grouping of groupBy(changesAtComponents, change => change.component.__id).sort((a, b) => a.key - b.key)) {
+        debugger;
+        const changesPerComponent = groupBy(setStateChanges, change => this.getComponentIdOnWhichToDoTheChange(change)).sort((a, b) => a.key - b.key);
+        for (const grouping of changesPerComponent) {
             const component = this.components.get(grouping.key);
             if (component === undefined) throw new Error('not possible');
             this.setState(component, grouping.elements);
         }
     }
 
-    /** Converts the change to a change on the parent, if needed, otherwise returns the change (with some additional info). */
-    private toParentChangeIfNecessary(_change: IPropertyChange | ICollectionItemAdded) {
+    private getComponentIdOnWhichToDoTheChange(this: ChangesPropagator, _change: IPropertyChange | ICollectionItemAdded): number {
+        // the component to the change on is the first component in the path to the root such that
+        // - it is not a view model AND 
+        // - that the path.propertyName is in the state rather than props
 
-        const _toParentChangeIfNecessary = (change: PartialPropertyChange): PropertyChange => {
-            const parentRelation = this.parents.get(change.id);
-            if (parentRelation !== undefined) {
-                const change_propertyName = ChangesPropagator.IsPropertyChanged(change) ? change.propertyName : change.index;
-                const { component: parentComponent } = this.getComponent(parentRelation.parentId);
-
-                const attributeOnParentThatHoldsCurrentComponent = (parentComponent.state as any)[parentRelation.propertyName]
-                    || (parentComponent.props as any)[parentRelation.propertyName];
-
-                const stateInfo = (parentComponent.stateInfo as SimpleStateInfo<any, any>)[parentRelation.propertyName] as any;
-                const _isParentState = undefinedToFalse(stateInfo);
-                // TODO: I feel like we can find out this stateInfo from simply looking up whether parentComponent.state or parentComponent.props
-                // have a property with relation.propertyName and that has __id == componentId... then that must settle that it the parent reference
-                // to the current component
-                // edit: see #33
-                // Then, if that reference (the object containing { __id: componentId }) also has the property propertyName,
-                // then it that would mean that the property is set through the parent
-                // if ((attributeOnParentThatHoldsCurrentComponent !== undefined) !== _isParentState)
-                //     debugger;
-                // assert((attributeOnParentThatHoldsCurrentComponent !== undefined) === _isParentState); // this checks that stateInfo is in fact conveying the same information
-
-                // but the following is extra information:
-                // edit: I included the _isParentState again because for 'commands' on the basecomponent it was different. TODO: straighten out
-                // second edit: I just removed the attributeOnparent because it was undefined when a child component is added before the parent component registered
-                const isParentChange = _isParentState; //  && change_propertyName in attributeOnParentThatHoldsCurrentComponent;
-                if (isParentChange) {
-                    if (!ChangesPropagator.IsPropertyChanged(change)) throw new Error('not implemented');
-                    const parentChange: IPropertyChange = {
-                        propertyName: parentRelation.propertyName as string,
-                        id: parentRelation.parentId,
-                        instructionId: change.instructionId,
-                        value: { [change_propertyName]: change.value }
-                    };
-                    const path = [parentRelation].concat(change.path);
-                    const result = { isPropsChange: true, component: parentComponent, path, ...change };
-                    const deeperResult = _toParentChangeIfNecessary(result);
-                    if (deeperResult.isPropsChange)
-                        return deeperResult;
-                    else
-                        return result;
-                }
-            }
-            const container = this.getComponent(change.id);
-            const result: PropertyChange = { ...change, ...container, isPropsChange: false }; // order is important
-            return result;
+        const relation = this.parents.get(_change.id);
+        if (relation === undefined) {
+            return _change.id;
         }
-        return _toParentChangeIfNecessary({ ..._change, path: [] });
+
+        if (this.rootIds.includes(_change.id)) {
+            return _change.id;
+        }
+
+
+        // traverse up until a relation is on state rather than on props:
+        let parentRelation = { propertyName: ChangesPropagator.IsPropertyChanged(_change) ? _change.propertyName : _change.index, parentId: _change.id };
+        while (this.isProps(parentRelation)) {
+            const ancestorRelation = this.parents.get(parentRelation.parentId);
+            if (ancestorRelation === undefined)
+                throw new Error('You cannot change props on the root');
+            parentRelation = ancestorRelation;
+        }
+
+        return parentRelation.parentId;
+    }
+    private getStateInfo(relation: PartialRelation): StateInfo {
+        const component = this.components.get(relation.parentId);
+        if (component !== undefined) {
+            return component.stateInfo;
+        }
+
+        const parentRelation = this.parents.get(relation.parentId);
+        assert(parentRelation !== undefined, 'The roots must have registered');
+        if (parentRelation === undefined) throw new Error();
+
+        const parentStateInfo: any = this.getStateInfo(parentRelation);
+        const stateInfo = parentStateInfo[parentRelation.propertyName];
+        assert(stateInfo !== undefined, `Couldn't find state info for (id=${relation.parentId}).${relation.propertyName}`);
+
+        return stateInfo;
+    }
+    private isProps(relation: PartialRelation): boolean {
+        const stateInfo = this.getStateInfo(relation);
+
+        const info: boolean | undefined | StateInfo = stateInfo[relation.propertyName];
+        switch (info) {
+            case true:
+                return true;
+            case undefined:
+            case false:
+            default:
+                return false;
+        }
+    }
+    private isParentChange(change: IPropertyChange | ICollectionItemAdded): boolean {
+        const componentIdOnWhichToDoTheChange = this.getComponentIdOnWhichToDoTheChange(change);
+        return componentIdOnWhichToDoTheChange != change.id;
     }
 
     private assertNoAncestorIsObject(id: number) {
@@ -415,10 +456,11 @@ export class ChangesPropagator implements IChangePropagator {
         return { setStateChanges, danglingChanges };
     }
     /** Does a react setState given the specified changes. */
-    private setState(component: IComponent, changes: PropertyChange[]): void {
-
+    private setState(component: IComponent, changes: (IPropertyChange | ICollectionItemAdded)[]): void {
         //TODO: detect merge conflicts due to async serverside and clientside commands
         component.setState(oldState => {
+            debugger;
+
             const result = this.toState(changes, component.__id, oldState);
             try {
                 component.assertIsValidState(result, false);
@@ -609,9 +651,8 @@ export class ChangesPropagator implements IChangePropagator {
         return 'index1' in change;
     }
     /** Merges the prev state with the changes, from the component id downwards. So this collects all changes that were prop changes to descendants of componentId */
-    private toState(changes: PropertyChange[], componentId: number, prevState: Readonly<BaseState>): Object {
+    private toState(changes: (IPropertyChange | ICollectionItemAdded)[], componentId: number, prevState: Readonly<BaseState>): Object {
         assert(changes != null);
-        assertAreIdentical(changes.map(change => change.component.__id));
         const result: any = {};
 
         changes.sort((a, b) => b.instructionId - a.instructionId);
@@ -620,13 +661,13 @@ export class ChangesPropagator implements IChangePropagator {
             if (!ChangesPropagator.IsPropertyChanged(change) && !ChangesPropagator.IsCollectionItemAdded(change)) {
                 throw new Error('not implemented');
             }
-            assert(change.component.__id === componentId, 'misaligned path ?');
             const change_value = ChangesPropagator.IsPropertyChanged(change) ? change.value : change.item;
             const change_propertyName = ChangesPropagator.IsPropertyChanged(change) ? change.propertyName : change.index;
 
             let currentResult: any = result;
             let currentOldState: any = prevState;
-            for (const pathElement of change.path) {
+            const path = this.getPathFrom(componentId, change.id);
+            for (const pathElement of path) {
                 const propertyName = pathElement.propertyName;
                 if (currentOldState !== undefined && currentOldState !== null) {
                     currentOldState = currentOldState[propertyName];
@@ -641,7 +682,9 @@ export class ChangesPropagator implements IChangePropagator {
         return result;
     }
 
-    /** Returns a path of length 0 if the viewmodelId is the id of a component. */
+    /** 
+     * Returns the path from the component that contains the specified view model to the viewmodel.
+     * So it returns a path of length 0 if the viewmodelId is the id of a component. */
     private getComponent(viewmodelId: number): ComponentType {
         const path: Relation[] = [];
 
@@ -661,11 +704,44 @@ export class ChangesPropagator implements IChangePropagator {
         }
     }
 
+    private getOwnerRelation(change: IPropertyChange | ICollectionItemAdded): PartialRelation {
+        const path = this.getComponent(change.id).path;
+
+        if (path.length == 0) {
+            const propertyName = ChangesPropagator.IsPropertyChanged(change) ? change.propertyName : change.index;
+            return { propertyName, parentId: change.id };
+        }
+        return path[0];
+    }
+    /** 
+     * Gets the id of the first component up in the ancestor tree of the specified view model, which could be the specified id itself.
+     */
+    private getOwnerComponentId(change: IPropertyChange | ICollectionItemAdded): number {
+        return this.getOwnerRelation(change).parentId;
+
+    }
     private getPath(viewmodelId: number): Relation[] {
         const componentAndPath = this.getComponent(viewmodelId);
         if (componentAndPath === undefined)
             throw new Error('viewmodel was not found');
         return componentAndPath.path; // PERF
+    }
+
+    /**
+     * Gets the path from the ancestor to a descendent. Throws if they do not have that relation.
+     */
+    private getPathFrom(ancestorId: number, descendentId: number): Relation[] {
+        const result: Relation[] = [];
+        let id = descendentId;
+        while (id != ancestorId) {
+            const relation = this.parents.get(id);
+            if (relation === undefined)
+                throw new Error('The specified descendent does not descent from the specified ancestor');
+
+            result.push(relation);
+            id = relation.parentId;
+        }
+        return result;
     }
 }
 

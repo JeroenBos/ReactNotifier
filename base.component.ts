@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { NotNeverValues, IsNotNever } from 'jbsnorro-typesafety/typeHelper';
-import { BaseState, BaseProps, IComponent } from './base.interfaces';
+import { BaseState, BaseProps, IComponent, isReference } from './base.interfaces';
 import { UncheckedOmit } from './core';
 import container from './IoC/container';
 import { TempIdProvider } from './tempIdProvider';
 import { identifiers } from './IoC/keys';
-import { ResettableContainer } from 'jbsnorro';
+import { ResettableContainer, assert } from 'jbsnorro';
 
 type typeSystemAssertion<T> = (x: T) => void;
 type typeSystemAssertionPartial<T> = (x: Partial<T>) => void;
@@ -118,6 +118,10 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
     /** The purpose of this property is to allow the ctor to access the abstract property 'stateInfo'. */
     private get _stateInfo(): SimpleStateInfo<TProps, S> {
         return this.stateInfo;
+    }
+    public isComponent(propertyName: string | number): boolean {
+        // you should return false for all viewmodels (i.e. non-component) children
+        return true;
     }
     /**
      * The rule here is that subproperties can be components or objects it they have a __id. 

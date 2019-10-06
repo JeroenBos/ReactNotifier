@@ -25,6 +25,7 @@ export interface IComponent<TState extends BaseState = BaseState, TProps extends
     // actually: while debuggin I notice that this state is being used for setting the isComponent boolean in a relation in the changes propagator
     // so it seems to indicate more whether it is a component than whether it's state or props?
     readonly stateInfo: SimpleStateInfo<TProps, TState>;
+    isComponent(propertyName: string | number): boolean;
 }
 export namespace IComponent {
     export function id(component: IComponent): number {
