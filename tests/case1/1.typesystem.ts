@@ -23,4 +23,4 @@ class NewTypeDescriptions implements TypeDescriptionsFor<newCheckableTypes> {
 
 export const AllTypeDescriptions1: TypeDescriptionsFor<CheckableTypes1 & PrimitiveTypes> = { ...new AllTypeDescriptions0(), ...new NewTypeDescriptions() };
 
-export const typesystem = new TypeSystem(AllTypeDescriptions1);
+export const typesystem = new TypeSystem(AllTypeDescriptions1, console.error);
