@@ -26,7 +26,7 @@ describe('ChangesPropagator', () => {
                 super(props, typesystem.verifyF('EmptyRootProps'), typesystem.verifyF('EmptyRootState'), typesystem.assertPartialF('EmptyRootState'));
             }
             public get stateInfo() { return emptyRootStateInfo; }
-            protected readonly defaultState: Readonly<EmptyRootState> = {};
+            protected getInitialState(): Readonly<EmptyRootState> { return {}; };
             render() { return <div></div>; }
         }
 
@@ -45,7 +45,7 @@ describe('ChangesPropagator', () => {
                 super(props, typesystem.verifyF('CounterRootProps'), typesystem.verifyF('CounterRootState'), typesystem.assertPartialF('CounterRootState'));
             }
             public get stateInfo() { return counterRootStateInfo; }
-            protected get defaultState(): Readonly<CounterRootState> { return { counter: { currentCount: 1 } } };
+            protected getInitialState(): Readonly<CounterRootState> { return { counter: { currentCount: 1 } } };
             render() { return <div></div>; }
         }
 
@@ -76,7 +76,7 @@ describe('ChangesPropagator', () => {
                 super(props, typesystem.verifyF('RootWithNestedCounterProps'), typesystem.verifyF('RootWithNestedCounterState'), typesystem.assertPartialF('RootWithNestedCounterState'));
             }
             public get stateInfo() { return { 'counter': true }; }
-            protected get defaultState(): Readonly<RootWithNestedCounterState> { return { counter: null }; }
+            protected getInitialState(): Readonly<RootWithNestedCounterState> { return { counter: null }; }
             render() { return this.state.counter == null ? null : < CounterComponent __id={counterId} />; }
         }
 
@@ -114,7 +114,7 @@ describe('ChangesPropagator', () => {
                 super(props, typesystem.verifyF('RootWithNestedCounterProps'), typesystem.verifyF('RootWithNestedCounterFromPropsState'), typesystem.assertPartialF('RootWithNestedCounterFromPropsState'));
             }
             public get stateInfo() { return { /* counter is state, so don't return it here */ }; }
-            protected get defaultState(): Readonly<RootWithNestedCounterFromPropsState> { return { counter: null, stateCounter: null }; }
+            protected getInitialState(): Readonly<RootWithNestedCounterFromPropsState> { return { counter: null, stateCounter: null }; }
             render() { return this.state.counter == null ? null : <CounterFromPropsComponent {...this.state.counter} />; }
         }
 
@@ -164,7 +164,7 @@ describe('ChangesPropagator', () => {
                 super(props, typesystem.verifyF('RootWithNestedRootProps'), typesystem.verifyF('RootWithNestedRootState'), typesystem.assertPartialF('RootWithNestedRootState'));
             }
             public get stateInfo() { return { 'nestedComponent': true }; }
-            protected get defaultState(): Readonly<S> { return { nestedComponent: null }; }
+            protected getInitialState(): Readonly<S> { return { nestedComponent: null }; }
             render() { return this.state.nestedComponent == null ? null : <NestedComponent __id={this.state.nestedComponent.__id} />; }
         }
 
@@ -174,7 +174,7 @@ describe('ChangesPropagator', () => {
                 super(props, typesystem.verifyF('RootWithNestedCounterProps'), typesystem.verifyF('RootWithNestedCounterFromPropsState'), typesystem.assertPartialF('RootWithNestedCounterFromPropsState'));
             }
             public get stateInfo() { return { 'counter': true, 'stateCounter': true }; }
-            protected get defaultState(): Readonly<RootWithNestedCounterFromPropsState> { return { counter: null, stateCounter: null }; }
+            protected getInitialState(): Readonly<RootWithNestedCounterFromPropsState> { return { counter: null, stateCounter: null }; }
             render() {
                 const counter = this.state.counter == null ? null : <CounterFromPropsComponent key='a' {...this.state.counter} />;
                 const stateCounter = this.state.stateCounter == null ? null : <CounterComponent key='b' {...this.state.stateCounter} />;
@@ -303,7 +303,7 @@ class CounterComponent extends BaseComponent<CounterProps, CounterState> {
         super(props, typesystem.verifyF('CounterProps'), typesystem.verifyF('CounterState'), typesystem.assertPartialF('CounterState'));
     }
     public get stateInfo() { return {}; }
-    protected get defaultState(): Readonly<CounterState> { return { currentCount: 0 }; }
+    protected getInitialState(): Readonly<CounterState> { return { currentCount: 0 }; }
     render() { return <div></div>; }
 }
 class CounterFromPropsComponent extends BaseComponent<CounterFromProps, CounterState> {
@@ -311,14 +311,10 @@ class CounterFromPropsComponent extends BaseComponent<CounterFromProps, CounterS
         super(props, typesystem.verifyF('CounterFromProps'), typesystem.verifyF('CounterState'), typesystem.assertPartialF('CounterState'));
     }
     public get stateInfo() { return { currentCountProp: true }; }
-    protected get defaultState(): Readonly<CounterState> {
-        return CounterFromPropsComponent.getDerivedStateFromProps(this.props);
+    protected getInitialState(props: Readonly<CounterFromProps>): Readonly<CounterState> {
+        return { currentCount: props.currentCountProp };
     }
     render() { return <div></div>; }
-
-    static getDerivedStateFromProps(nextProps: Readonly<CounterFromProps>): CounterState {
-        return { currentCount: nextProps.currentCountProp };
-    }
 }
 
 

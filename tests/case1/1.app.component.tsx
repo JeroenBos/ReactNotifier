@@ -9,7 +9,7 @@ export class AppComponent extends BaseComponent<AppProps, AppState> {
     constructor(props: AppProps) {
         super(props, typesystem.verifyF('AppProps'), typesystem.verifyF('AppState'), typesystem.assertPartialF('AppState'));
     }
-    protected get defaultState(): Readonly<AppState> {
+    protected getInitialState(): Readonly<AppState> {
         return {
             window: null
         };

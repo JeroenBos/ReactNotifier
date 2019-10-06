@@ -112,7 +112,7 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
 
     /** The purpose of this property is to allow the ctor to access the abstract property 'defaultState'. */
     private get _defaultState(): Readonly<S> {
-        return this.defaultState;
+        return this.getInitialState(this.props);;
     }
     /** The purpose of this property is to allow the ctor to access the abstract property 'stateInfo'. */
     private get _stateInfo(): SimpleStateInfo<TProps, S> {
@@ -127,7 +127,11 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
      * Initialization at null is standard in that case, otherwise, if it represents a component, the initialized value must be valid props (or via the render function at least).
      * Possibly UNINITIALIZED_ID can be used at __id
      */
-    protected abstract get defaultState(): Readonly<S>;
+    protected abstract getInitialState(props: Readonly<TProps>): Readonly<S>;
+    UNSAFE_componentWillReceiveProps(nextProps: Readonly<TProps>) {
+        if (this.props !== nextProps)
+            this.setState(() => this.getInitialState(nextProps));
+    }
     componentDidMount() {
     }
     componentWillUnmount() {

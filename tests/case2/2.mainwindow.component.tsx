@@ -17,7 +17,7 @@ export class MainWindowComponent extends BaseComponent<MainWindowProps, MainWind
         super(props, typesystem.verifyF('MainWindowProps'), typesystem.verifyF('MainWindowState'), typesystem.assertPartialF('MainWindowState'));
     }
 
-    protected get defaultState() {
+    protected getInitialState() {
         return {
             rootEquation: ''
         };
