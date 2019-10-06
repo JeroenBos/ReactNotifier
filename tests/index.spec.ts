@@ -22,3 +22,4 @@ import './test.spec';
 import './case0/0.spec';
 import './case1/1.spec';
 import './case2/2.spec';
+import './case3/changepropagator.spec';
