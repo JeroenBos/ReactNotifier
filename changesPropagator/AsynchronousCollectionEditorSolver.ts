@@ -1,7 +1,7 @@
 ﻿import 'rxjs/add/operator/toPromise';
 import { SerializedComponentProps, SerializedType, AdmissiblePrimitiveType, StateType, isComponentProps, isComponent } from './common';
-import { assert } from '../core';
 import { IComponent, UNINITIALIZED_ID } from '../base.interfaces';
+import { assert } from 'jbsnorro';
 
 type Command = any;
 

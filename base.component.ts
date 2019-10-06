@@ -5,6 +5,7 @@ import { UncheckedOmit } from './core';
 import container from './IoC/container';
 import { TempIdProvider } from './tempIdProvider';
 import { identifiers } from './IoC/keys';
+import { ResettableContainer } from 'jbsnorro';
 
 type typeSystemAssertion<T> = (x: T) => void;
 type typeSystemAssertionPartial<T> = (x: Partial<T>) => void;

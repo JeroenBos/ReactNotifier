@@ -1,14 +1,14 @@
-import { AbstractProvider } from "./provider";
+import { AbstractProvider } from 'jbsnorro';
 import { identifiers } from "./keys";
 import { ChangesPropagator, IResponse, IPropertyChange } from "../changesPropagator/ChangesPropagator";
 import { CommandManagerId } from "../base.interfaces";
 import { TempIdProvider } from "../tempIdProvider";
 import { Http } from "../changesPropagator/http";
-import { TypeSystem } from "jbsnorro-typesafety";
 import { AbstractCommandManager } from "../commands/abstractCommandManager";
 import { CommandInstruction } from "../commands/commandInstruction";
 import container from "./container"; // order is important
 import { Omit } from "../core";
+import { TypeSystem } from 'jbsnorro-typesafety';
 
 export type ITestChange = Omit<IPropertyChange, 'instructionId'>;
 export type ITestResponse = ITestChange[];

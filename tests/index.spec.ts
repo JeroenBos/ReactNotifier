@@ -9,8 +9,8 @@ import '../IoC/initializeTestContainer'; // initializes the container with test 
 if ((ReactDOM as any).dontReplayFailedUnitOfWork) {
     (ReactDOM as any).dontReplayFailedUnitOfWork();
 } else {
-    throw new Error(`// I add this to line 19586 of react-dom.development.js:
-    // dontReplayFailedUnitOfWork: function () { replayFailedUnitOfWorkWithInvokeGuardedCallback = false },`);
+    // throw new Error(`// I add this to line 19586 of react-dom.development.js:
+    // // dontReplayFailedUnitOfWork: function () { replayFailedUnitOfWorkWithInvokeGuardedCallback = false },`);
 }
 
 

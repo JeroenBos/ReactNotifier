@@ -1,4 +1,4 @@
-﻿import { Key } from "ts-keycode-enum";
+﻿import { Key } from 'ts-keycode-enum';
 
 export type CanonicalInputBinding = string;
 

@@ -3,11 +3,11 @@ import { AsynchronousCollectionEditorSolver } from './AsynchronousCollectionEdit
 import { IChangePropagator, IComponent, BaseProps, BaseState, UNINITIALIZED_ID, isReference } from '../base.interfaces';
 import { CommandInstruction } from './../commands/commandInstruction';
 import { Http } from './http';
-import { assert, groupBy, Grouping, deepMerge, assertAreIdentical, deepMergeInPlace, Omit } from '../core';
+import { groupBy, Grouping, deepMerge, deepMergeInPlace, Omit } from '../core';
 import { SerializedComponentProps, SerializedType, AdmissiblePrimitiveType, StateType, isComponentProps, isComponent } from './common';
 import { SimpleStateInfo } from '../base.component';
-import { isDevelopment, undefinedToFalse } from '../../../View.Client/view/jbsnorro/core';
 import container from '../IoC/container';
+import { assert, assertAreIdentical, undefinedToFalse, isDevelopment } from 'jbsnorro';
 
 type PropertyChange = (IPropertyChange | ICollectionItemAdded) & ComponentType & { isPropsChange: boolean };
 type ComponentType = {
@@ -359,7 +359,7 @@ export class ChangesPropagator implements IChangePropagator {
         // The case in which this could go wrong is when a child object has isComponent === false, but it's not dangling
         // I feel like some other code should already have taken care of that, hence the assertion
 
-        if (isDevelopment()) {
+        if (isDevelopment) {
             for (const [_, relation] of this.parents.entries()) {
                 if (relation.parentId === newComponent.__id) {
                     if (relation.isComponent === undefined) {

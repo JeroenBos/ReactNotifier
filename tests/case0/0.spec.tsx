@@ -4,13 +4,13 @@ import { mount } from 'enzyme';
 import 'jsdom-global/register';
 import { AppComponent, Counter } from './0.app.component';
 import { AppId, CommandManagerId } from '../../base.interfaces';
-import { assert } from '../../core';
 import { identifiers } from '../../IoC/keys';
 import { ReactWrapper } from '../enzyme.wrapper';
 import { ITestResponse, MockCommandInstruction } from '../../IoC/defaults';
 import { counterInitResponse, counterRefResponse, counterIncrementResponse, counterIncrementTwiceResponse } from '../responses';
 import { typesystem } from './0.typesystem';
 import container from '../../IoC/container';
+import { assert } from 'jbsnorro';
 
 ///////////// initialization: /////////////
 const rootIds: number[] = [AppId, CommandManagerId];

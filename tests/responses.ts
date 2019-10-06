@@ -1,5 +1,5 @@
-import { ITestChange } from "../IoC/defaults";
 import { AppId } from "../base.interfaces";
+import { ITestChange } from "../IoC/defaults";
 
 const counterId = 3;
 const windowId = 2;

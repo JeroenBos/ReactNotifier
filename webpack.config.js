@@ -1,7 +1,7 @@
-const nodeEnv = process.env.NODE_ENV || 'development';
 const CleanWebpackPlugin = require('clean-webpack-plugin');
+const nodeExternals = require('webpack-node-externals');
 
-var sharedConfig = {
+const sharedConfig = {
     mode: 'development',
     devtool: 'source-map',
     module: {
@@ -18,6 +18,7 @@ var sharedConfig = {
             }
         ]
     },
+    externals: [nodeExternals()],
     // uncommenting the following would be a performance optimization (use browser caching)
     // externals: {
     //     "react": "React",
@@ -31,7 +32,10 @@ var sharedConfig = {
     // @see https://github.com/webpack/docs/wiki/Configuration#node
     node: {
         fs: 'empty',
-        child_process: 'empty'
+        child_process: 'empty',
+        net: 'empty',
+        console: true,
+        tls: 'empty'
     },
     plugins: [
         new CleanWebpackPlugin(['dist'], {
@@ -43,7 +47,7 @@ var sharedConfig = {
     }
 };
 
-var mainConfig = {
+const mainConfig = {
     ...sharedConfig,
     name: 'main',
     entry: './index.ts',
@@ -54,7 +58,7 @@ var mainConfig = {
         globalObject: 'typeof self !== \'undefined\' ? self : this', // webpack bug workaround, see https://github.com/webpack/webpack/issues/6784
     },
 };
-var testConfig = {
+const testConfig = {
     ...sharedConfig,
     name: 'test',
     entry: './tests/index.spec.ts',
