@@ -264,7 +264,8 @@ export class ChangesPropagator implements IChangePropagator {
 
                 // but the following is extra information:
                 // edit: I included the _isParentState again because for 'commands' on the basecomponent it was different. TODO: straighten out
-                const isParentChange = _isParentState && change_propertyName in attributeOnParentThatHoldsCurrentComponent;
+                // second edit: I just removed the attributeOnparent because it was undefined when a child component is added before the parent component registered
+                const isParentChange = _isParentState; //  && change_propertyName in attributeOnParentThatHoldsCurrentComponent;
                 if (isParentChange) {
                     if (!ChangesPropagator.IsPropertyChanged(change)) throw new Error('not implemented');
                     const parentChange: IPropertyChange = {
@@ -274,7 +275,7 @@ export class ChangesPropagator implements IChangePropagator {
                         value: { [change_propertyName]: change.value }
                     };
                     const path = [parentRelation].concat(change.path);
-                    const result = { isPropsChange: true, component: parentComponent, path, ...parentChange };
+                    const result = { isPropsChange: true, component: parentComponent, path, ...change };
                     const deeperResult = _toParentChangeIfNecessary(result);
                     if (deeperResult.isPropsChange)
                         return deeperResult;
