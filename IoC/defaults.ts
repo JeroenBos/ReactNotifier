@@ -7,8 +7,6 @@ import { Http } from "../changesPropagator/http";
 import { AbstractCommandManager } from "../commands/abstractCommandManager";
 import { CommandInstruction } from "../commands/commandInstruction";
 import container from "./container"; // order is important
-import { Omit } from "../core";
-import { TypeSystem } from 'jbsnorro-typesafety';
 
 export type ITestChange = Omit<IPropertyChange, 'instructionId'>;
 export type ITestResponse = ITestChange[];

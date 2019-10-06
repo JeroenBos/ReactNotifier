@@ -4,7 +4,6 @@ import { mount } from 'enzyme';
 import 'jsdom-global/register';
 import { AppComponent, AppState } from './1.app.component';
 import { AppId, CommandManagerId } from '../../base.interfaces';
-import { isEmptyObject } from '../../core';
 import { identifiers } from '../../IoC/keys';
 import { ReactWrapper, wraps } from '../enzyme.wrapper';
 import { ITestResponse, MockCommandInstruction } from '../../IoC/defaults';
@@ -12,7 +11,7 @@ import { mainWindowRefResponse, mainWindowInitResponseS } from '../responses';
 import { MainWindowState, MainWindowProps, MainWindowComponent } from './1.mainwindow.component';
 import { typesystem } from './1.typesystem';
 import container from '../../IoC/container';
-import { assert } from 'jbsnorro';
+import { assert, isEmptyObject } from 'jbsnorro';
 
 ///////////// initialization: /////////////
 const rootIds: number[] = [AppId, CommandManagerId];

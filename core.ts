@@ -24,28 +24,6 @@ export namespace PromiseFactory {
     }
 }
 
-export type Grouping<TKey, T> = { key: TKey, elements: T[] };
-
-export function groupBy<TKey, TSource>(sequence: TSource[], keySelector: (key: TSource) => TKey): Grouping<TKey, TSource>[] {
-    // fock that shit, I can't figure out the type signature of https://stackoverflow.com/a/34890276/308451
-
-    const result: { key: TKey, elements: TSource[] }[] = [];
-
-    sequence.forEach(element => {
-        const key = keySelector(element);
-        const collection = result.find(collection => collection.key == key); // PERF: dictionary to index in result
-        if (collection === undefined) {
-            result.push({ key, elements: [element] });
-        }
-        else {
-            collection.elements.push(element);
-        }
-    });
-
-    return result;
-
-    // there. done. that was way faster than understanding that JS BS
-}
 /**
  * Merges 'data' into 'merge'.
  */
@@ -96,10 +74,3 @@ function deepMergeHelper<T extends object>(merge: T, data: object, mergeInPlace:
     }
     return merge;
 }
-
-export function isEmptyObject(obj: any): obj is {} {
-    const result = Object.keys(obj).length === 0 && obj.constructor === Object;
-    return result;
-}
-export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
-export type UncheckedOmit<T, K> = Pick<T, Exclude<keyof T, K>>;

@@ -4,8 +4,7 @@ import { CommandInstruction } from './../commands/commandInstruction';
 import { Http } from './http';
 import { SerializedType, StateType, isComponentProps, isComponent } from './common';
 import { SimpleStateInfo, StateInfoLocalHelper } from '../base.component';
-import { assert, undefinedToFalse, isDevelopment, assertAreIdentical } from 'jbsnorro';
-import { groupBy } from '../core';
+import { assert, undefinedToFalse, isDevelopment, assertAreIdentical, groupBy } from 'jbsnorro';
 import { isFunction } from 'util';
 
 type StateInfo = any;
@@ -262,7 +261,6 @@ export class ChangesPropagator implements IChangePropagator {
             }
         }
 
-        debugger;
         const changesPerComponent = groupBy(setStateChanges, change => this.getComponentIdOnWhichToDoTheChange(change)).sort((a, b) => a.key - b.key);
         for (const grouping of changesPerComponent) {
             const component = this.components.get(grouping.key);
@@ -477,8 +475,6 @@ export class ChangesPropagator implements IChangePropagator {
     private setState(component: IComponent, changes: (IPropertyChange | ICollectionItemAdded)[]): void {
         //TODO: detect merge conflicts due to async serverside and clientside commands
         component.setState(oldState => {
-            debugger;
-
             const result = this.toState(changes, component.__id, oldState);
             try {
                 component.assertIsValidState(result, false);

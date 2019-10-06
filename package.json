@@ -15,7 +15,7 @@
   "author": "Jeroen Bos",
   "license": "ISC",
   "dependencies": {
-    "jbsnorro": "0.0.3",
+    "jbsnorro": "0.0.4",
     "jbsnorro-typesafety": "0.9.13",
     "react": "16.6.3",
     "react-dom": "16.6.3",

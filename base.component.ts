@@ -1,11 +1,10 @@
 import * as React from 'react';
 import { NotNeverValues, IsNotNever } from 'jbsnorro-typesafety/typeHelper';
 import { BaseState, BaseProps, IComponent, isReference } from './base.interfaces';
-import { UncheckedOmit } from './core';
 import container from './IoC/container';
 import { TempIdProvider } from './tempIdProvider';
 import { identifiers } from './IoC/keys';
-import { ResettableContainer, assert } from 'jbsnorro';
+import { ResettableContainer, assert, UncheckedOmit } from 'jbsnorro';
 
 type typeSystemAssertion<T> = (x: T) => void;
 type typeSystemAssertionPartial<T> = (x: Partial<T>) => void;

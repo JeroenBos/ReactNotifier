@@ -2,7 +2,6 @@ import { TypeSystem, TypeDescriptionsFor, createCreateFunction, nullable, Primit
 import { AppState } from './1.app.component';
 import { AllTypeDescriptions0, CheckableTypes0 } from '../case0/0.typesystem';
 import { MainWindowProps, MainWindowState } from './1.mainwindow.component';
-import { Omit } from '../../core';
 const create = <T extends object>() => createCreateFunction<CheckableTypes1, T>();
 
 type overriddenTypes = 'AppState';

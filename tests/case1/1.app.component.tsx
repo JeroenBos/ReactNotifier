@@ -3,8 +3,6 @@ import { BaseProps, BaseState, IComponent } from '../../base.interfaces';
 import { typesystem } from './1.typesystem';
 import { BaseComponent, SimpleStateInfo } from '../../base.component';
 import { MainWindowProps, MainWindowComponent, MainWindowState, MainWindowStateInfo } from './1.mainwindow.component';
-import { NotNeverValues, IsNotNever, IsExact } from 'jbsnorro-typesafety/typeHelper';
-import { Omit, UncheckedOmit } from '../../core';
 
 export class AppComponent extends BaseComponent<AppProps, AppState> {
     private test = typesystem.verifyF('AppState');
