@@ -49,6 +49,13 @@ export const mainWindowInitResponse: ITestChange =
     value: { __id: equationId }
 };
 
+export const mainWindowInitResponseS: ITestChange =
+{
+    id: windowId,
+    propertyName: 'rootEquation',
+    value: 's'
+};
+
 export const setRootEquationToS: ITestChange =
 {
     id: equationId,

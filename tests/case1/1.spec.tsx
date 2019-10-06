@@ -8,7 +8,7 @@ import { isEmptyObject } from '../../core';
 import { identifiers } from '../../IoC/keys';
 import { ReactWrapper, wraps } from '../enzyme.wrapper';
 import { ITestResponse, MockCommandInstruction } from '../../IoC/defaults';
-import { mainWindowRefResponse, mainWindowInitResponse } from '../responses';
+import { mainWindowRefResponse, mainWindowInitResponseS } from '../responses';
 import { MainWindowState, MainWindowProps, MainWindowComponent } from './1.mainwindow.component';
 import { typesystem } from './1.typesystem';
 import container from '../../IoC/container';
@@ -16,7 +16,7 @@ import { assert } from 'jbsnorro';
 
 ///////////// initialization: /////////////
 const rootIds: number[] = [AppId, CommandManagerId];
-const responses: ITestResponse[] = [[mainWindowRefResponse, mainWindowInitResponse]];
+const responses: ITestResponse[] = [[mainWindowRefResponse, mainWindowInitResponseS]];
 
 ///////////// tests: /////////////
 describe('1. App ', () => {
