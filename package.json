@@ -1,10 +1,11 @@
 {
   "name": "jbsnorro-reactnotifier",
   "version": "0.0.1",
-  "description": "A small library for mapping changes (from ASP.NET Core) onto TypeScript/React components.",
+  "description": "A library for mapping changes (from ASP.NET Core) onto TypeScript/React components.",
   "main": "dist/jbsnorro_reactnotifier.js",
   "types": "dist/jbsnorro_reactnotifier.d.ts",
   "scripts": {
+    "prepublishOnly": "npm install && webpack && mocha dist/test.js",
     "build": "webpack",
     "watch": "webpack --watch",
     "buildAndTest": "webpack && mocha dist/test.js",
@@ -13,18 +14,34 @@
   },
   "author": "Jeroen Bos",
   "license": "ISC",
-  "dependencies": {},
+  "dependencies": {
+    "jbsnorro": "0.0.4",
+    "jbsnorro-typesafety": "0.9.13",
+    "react": "16.6.3",
+    "react-dom": "16.6.3",
+    "rxjs": "5.5.6",
+    "ts-keycode-enum": "1.0.6"
+  },
   "devDependencies": {
     "@types/chai": "3.4.34",
+    "@types/enzyme": "3.9.1",
+    "@types/enzyme-adapter-react-16": "1.0.5",
     "@types/glob": "7.1.0",
     "@types/mocha": "5.2.6",
+    "@types/react": "16.7.7",
+    "@types/react-dom": "16.0.10",
     "@types/webpack-env": "1.13.6",
     "awesome-typescript-loader": "5.2.1",
     "chai": "4.1.2",
     "clean-webpack-plugin": "0.1.19",
+    "enzyme": "3.9.0",
+    "enzyme-adapter-react-16": "1.12.1",
     "glob": "7.1.3",
+    "jsdom": "14.0.0",
+    "jsdom-global": "3.0.2",
     "mocha": "6.0.2",
     "mocha-typescript": "1.1.12",
+    "reflect-metadata": "0.1.12",
     "source-map-loader": "0.2.4",
     "ts-loader": "5.3.3",
     "ts-node": "7.0.1",
@@ -32,7 +49,8 @@
     "webpack": "4.29.6",
     "webpack-cli": "3.2.3",
     "webpack-config-utils": "2.3.0",
-    "webpack-dev-server": "3.2.1"
+    "webpack-dev-server": "3.2.1",
+    "webpack-node-externals": "1.7.2"
   },
   "directories": {
     "test": "tests"
@@ -41,10 +59,7 @@
     "type": "git",
     "url": "git+https://github.com/JeroenBos/ReactNotifier.git"
   },
-  "keywords": [
-    "type guard",
-    "type safety"
-  ],
+  "keywords": [],
   "bugs": {
     "url": "https://github.com/JeroenBos/ReactNotifier/issues"
   },
