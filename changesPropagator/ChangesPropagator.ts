@@ -288,7 +288,8 @@ export class ChangesPropagator implements IChangePropagator {
 
         // traverse up until a relation is on state rather than on props:
         let parentRelation = { propertyName: ChangesPropagator.IsPropertyChanged(_change) ? _change.propertyName : _change.index, parentId: _change.id };
-        while (this.isProps(parentRelation)) {
+
+        while (this.isOnViewModel(parentRelation) || this.isProps(parentRelation)) {
             const ancestorRelation = this.parents.get(parentRelation.parentId);
             if (ancestorRelation === undefined)
                 throw new Error('You cannot change props on the root');
@@ -297,26 +298,27 @@ export class ChangesPropagator implements IChangePropagator {
 
         return parentRelation.parentId;
     }
-    private getStateInfo(relation: PartialRelation): StateInfo {
-        const component = this.components.get(relation.parentId);
-        if (component !== undefined) {
-            return component.stateInfo;
+
+    private isOnViewModel(relation: PartialRelation): boolean {
+        const parent = this.parents.get(relation.parentId);
+        if (parent === undefined)
+            return false; // it must be on a root
+
+        switch (parent.isComponent) {
+            case false:
+                return true;
+            case true:
+                return false;
+            case undefined:
+                assert(false, 'i dont know');
+            default: throw new Error('unreachable');
         }
 
-        const parentRelation = this.parents.get(relation.parentId);
-        assert(parentRelation !== undefined, 'The roots must have registered');
-        if (parentRelation === undefined) throw new Error();
-
-        const parentStateInfo: any = this.getStateInfo(parentRelation);
-        const stateInfo = parentStateInfo[parentRelation.propertyName];
-        assert(stateInfo !== undefined, `Couldn't find state info for (id=${relation.parentId}).${relation.propertyName}`);
-
-        return stateInfo;
     }
     private isProps(relation: PartialRelation): boolean {
-        const stateInfo = this.getStateInfo(relation);
+        const stateInfo: StateInfo | undefined = getStateInfo.call(this, relation);
 
-        const info: boolean | undefined | StateInfo = stateInfo[relation.propertyName];
+        const info: boolean | undefined | StateInfo = (stateInfo || {})[relation.propertyName];
         switch (info) {
             case true:
                 return true;
@@ -324,6 +326,22 @@ export class ChangesPropagator implements IChangePropagator {
             case false:
             default:
                 return false;
+        }
+
+        function getStateInfo(this: ChangesPropagator, relation: PartialRelation): StateInfo | undefined {
+            const component = this.components.get(relation.parentId);
+            if (component !== undefined) {
+                return component.stateInfo;
+            }
+
+            const parentRelation = this.parents.get(relation.parentId);
+            assert(parentRelation !== undefined, 'The roots must have registered');
+            if (parentRelation === undefined) throw new Error();
+
+            const parentStateInfo: any = getStateInfo.call(this, parentRelation);
+            const stateInfo = parentStateInfo[parentRelation.propertyName];
+
+            return stateInfo;
         }
     }
     private isParentChange(change: IPropertyChange | ICollectionItemAdded): boolean {
