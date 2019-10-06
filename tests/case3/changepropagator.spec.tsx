@@ -20,7 +20,6 @@ describe('ChangesPropagator', () => {
     beforeEach(() => container.resetAll());
 
     describe('EmptyRootComponent', () => {
-        debugger;
         const emptyRootStateInfo: SimpleStateInfo<EmptyRootProps, EmptyRootState> = {};
         class EmptyRootComponent extends BaseComponent<EmptyRootProps, EmptyRootState> {
             constructor(props: EmptyRootProps) {
@@ -89,7 +88,6 @@ describe('ChangesPropagator', () => {
             const { wrapper } = mountAndExtract<RootWithNestedCounterComponent>(<RootWithNestedCounterComponent __id={rootId} />);
             await executeNextCommand(); // register counter at root
             const { childState } = updateAndExtract<RootWithNestedCounterComponent, CounterProps, CounterState>(wrapper);
-            debugger;
             assert(childState.currentCount == 0); // default value
         });
         it('Can increment counter on RootWithNestedCounter', async () => {
@@ -128,7 +126,6 @@ describe('ChangesPropagator', () => {
             const { wrapper } = mountAndExtract<Root>(<Root __id={rootId} />);
             await executeNextCommand(); // register counter at root
             const { childState } = updateAndExtract<Root, CounterFromProps, CounterState>(wrapper);
-            debugger;
             assert(childState.currentCount == 1);
         });
         it('Can increment counter on RootWithNestedCounter', async () => {
