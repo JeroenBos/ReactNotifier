@@ -258,7 +258,7 @@ export class ChangesPropagator implements IChangePropagator {
                 danglingState[danglingChange_propertyName] = danglingChange_value;
             }
         }
-        
+
         const changesPerComponent = groupBy(setStateChanges, change => this.getComponentIdOnWhichToDoTheChange(change)).sort((a, b) => a.key - b.key);
         for (const grouping of changesPerComponent) {
             const component = this.components.get(grouping.key);
@@ -287,9 +287,8 @@ export class ChangesPropagator implements IChangePropagator {
 
         while (this.isOnViewModel(parentRelation) || this.isProps(parentRelation)) {
             const ancestorRelation = this.parents.get(parentRelation.parentId);
-            if (ancestorRelation === undefined)
-                throw new Error('You cannot change props on the root');
-            parentRelation = ancestorRelation;
+            assert(ancestorRelation !== undefined, 'You cannot change props on the root');
+            parentRelation = ancestorRelation!;
         }
 
         return parentRelation.parentId;

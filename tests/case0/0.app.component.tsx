@@ -15,6 +15,7 @@ export class AppComponent extends BaseComponent<AppProps, AppState> {
 
     public get stateInfo(): SimpleStateInfo<AppProps, AppState> {
         return {
+            counter: { currentCount: true }
             // counter is on state, so it is missing here
         };
     }

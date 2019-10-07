@@ -24,7 +24,7 @@ export class MainWindowComponent extends BaseComponent<MainWindowProps, MainWind
     }
     public get stateInfo() {
         // {} means that none of the properties of MainWindowState have props. There are no properties on MainWindowState, so that's vacuously true
-        return {};
+        return { rootEquation: false as false};
     };
     
     render(): React.ReactNode {

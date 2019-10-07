@@ -27,6 +27,7 @@ export class AppComponent extends BaseComponent<AppProps, AppState> {
     }
 }
 
+
 export interface AppProps extends BaseProps {
 }
 export interface AppState extends BaseState {

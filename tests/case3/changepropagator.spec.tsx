@@ -3,12 +3,13 @@ import 'jsdom-global/register';
 import { Component, ReactElement } from 'react';
 import { MountRendererProps, mount } from 'enzyme';
 import container from '../../IoC/container';
-import { SimpleStateInfo, BaseComponent } from '../../base.component';
+import { SimpleStateInfo, BaseComponent, TInfo } from '../../base.component';
 import { BaseProps, BaseState } from '../../base.interfaces';
 import initializePredefinedResponsesContainer from './container';
 import { ReactWrapper } from '../enzyme.wrapper';
 import { MockCommandInstruction } from '../../IoC/defaults';
 import { assert } from 'jbsnorro';
+import { assert as assertT, IsExact } from 'jbsnorro-typesafety/typeHelper';
 
 const rootId = 0;
 
@@ -20,7 +21,7 @@ describe('ChangesPropagator', () => {
     beforeEach(() => container.resetAll());
 
     describe('EmptyRootComponent', () => {
-        const emptyRootStateInfo: SimpleStateInfo<EmptyRootProps, EmptyRootState> = {};
+        const emptyRootStateInfo: SimpleStateInfo<EmptyRootProps, EmptyRootState> = { __id: true as true };
         class EmptyRootComponent extends BaseComponent<EmptyRootProps, EmptyRootState> {
             constructor(props: EmptyRootProps) {
                 super(props, typesystem.verifyF('EmptyRootProps'), typesystem.verifyF('EmptyRootState'), typesystem.assertPartialF('EmptyRootState'));
@@ -39,7 +40,7 @@ describe('ChangesPropagator', () => {
         before(() => {
             initializePredefinedResponsesContainer([[{ propertyName: 'counter', id: 0, value: { currentCount: 2 } }]]);
         });
-        const counterRootStateInfo: SimpleStateInfo<CounterRootProps, CounterRootState> = {};
+        const counterRootStateInfo: SimpleStateInfo<CounterRootProps, CounterRootState> = { counter: false as false };
         class CounterRootComponent extends BaseComponent<CounterRootProps, CounterRootState> {
             constructor(props: CounterRootProps) {
                 super(props, typesystem.verifyF('CounterRootProps'), typesystem.verifyF('CounterRootState'), typesystem.assertPartialF('CounterRootState'));
@@ -75,7 +76,7 @@ describe('ChangesPropagator', () => {
             constructor(props: RootWithNestedCounterProps) {
                 super(props, typesystem.verifyF('RootWithNestedCounterProps'), typesystem.verifyF('RootWithNestedCounterState'), typesystem.assertPartialF('RootWithNestedCounterState'));
             }
-            public get stateInfo() { return { 'counter': true }; }
+            public get stateInfo() { return { 'counter': false as false }; }
             protected getInitialState(): Readonly<RootWithNestedCounterState> { return { counter: null }; }
             render() { return this.state.counter == null ? null : < CounterComponent __id={counterId} />; }
         }
@@ -108,12 +109,14 @@ describe('ChangesPropagator', () => {
                     [{ propertyName: 'currentCount', id: counterId, value: 2 }], // increment counter directly on state
                     [{ propertyName: 'currentCountProp', id: counterId, value: 3 }], // increment counter via props
                 ]);
+                
         });
+      
         class Root extends BaseComponent<RootWithNestedCounterProps, RootWithNestedCounterFromPropsState> {
             constructor(props: RootWithNestedCounterProps) {
                 super(props, typesystem.verifyF('RootWithNestedCounterProps'), typesystem.verifyF('RootWithNestedCounterFromPropsState'), typesystem.assertPartialF('RootWithNestedCounterFromPropsState'));
             }
-            public get stateInfo() { return { /* counter is state, so don't return it here */ }; }
+            public get stateInfo() { return { counter: CounterFromPropsComponent.StateInfo, stateCounter: true }; }
             protected getInitialState(): Readonly<RootWithNestedCounterFromPropsState> { return { counter: null, stateCounter: null }; }
             render() { return this.state.counter == null ? null : <CounterFromPropsComponent {...this.state.counter} />; }
         }
@@ -163,7 +166,6 @@ describe('ChangesPropagator', () => {
             constructor(props: RootWithNestedCounterProps) {
                 super(props, typesystem.verifyF('RootWithNestedRootProps'), typesystem.verifyF('RootWithNestedRootState'), typesystem.assertPartialF('RootWithNestedRootState'));
             }
-            public get stateInfo() { return { 'nestedComponent': true }; }
             protected getInitialState(): Readonly<S> { return { nestedComponent: null }; }
             render() { return this.state.nestedComponent == null ? null : <NestedComponent __id={this.state.nestedComponent.__id} />; }
         }
@@ -173,7 +175,6 @@ describe('ChangesPropagator', () => {
             constructor(props: RootWithNestedCounterProps) {
                 super(props, typesystem.verifyF('RootWithNestedCounterProps'), typesystem.verifyF('RootWithNestedCounterFromPropsState'), typesystem.assertPartialF('RootWithNestedCounterFromPropsState'));
             }
-            public get stateInfo() { return { 'counter': true, 'stateCounter': true }; }
             protected getInitialState(): Readonly<RootWithNestedCounterFromPropsState> { return { counter: null, stateCounter: null }; }
             render() {
                 const counter = this.state.counter == null ? null : <CounterFromPropsComponent key='a' {...this.state.counter} />;
@@ -193,10 +194,11 @@ describe('ChangesPropagator', () => {
             assert(child.children().length == 0);
         });
         it('Can register counter on RootWithNestedCounter', async () => {
+            debugger;
             const { wrapper } = mountAndExtract<Root>(<Root __id={rootId} />);
             await executeNextCommand(2); // register nested component at root and counter at nested component
-            const grandChildState: CounterState = updateAndExtract<Root>(wrapper).grandChildState;
-            assert(grandChildState.currentCount == 1);
+            const grandChildState = updateAndExtract<Root>(wrapper);
+            assert(grandChildState.grandChildState.currentCount == 1);
         });
         it('Can increment counter on RootWithNestedCounter', async () => {
             const { wrapper } = mountAndExtract<Root>(<Root __id={rootId} />);
@@ -302,7 +304,7 @@ class CounterComponent extends BaseComponent<CounterProps, CounterState> {
     constructor(props: CounterProps) {
         super(props, typesystem.verifyF('CounterProps'), typesystem.verifyF('CounterState'), typesystem.assertPartialF('CounterState'));
     }
-    public get stateInfo() { return {}; }
+    public get stateInfo() { return { currentCount: false as false }; }
     protected getInitialState(): Readonly<CounterState> { return { currentCount: 0 }; }
     render() { return <div></div>; }
 }
@@ -310,11 +312,14 @@ class CounterFromPropsComponent extends BaseComponent<CounterFromProps, CounterS
     constructor(props: CounterFromProps) {
         super(props, typesystem.verifyF('CounterFromProps'), typesystem.verifyF('CounterState'), typesystem.assertPartialF('CounterState'));
     }
-    public get stateInfo() { return { currentCountProp: true }; }
+    public get stateInfo() { return { currentCountProp: true as true, currentCount: false as false }; }
     protected getInitialState(props: Readonly<CounterFromProps>): Readonly<CounterState> {
+
         return { currentCount: props.currentCountProp };
     }
     render() { return <div></div>; }
+
+    public static readonly StateInfo: SimpleStateInfo<CounterFromProps, CounterState>  = Object.freeze({ currentCountProp: true as true, currentCount: false as false });
 }
 
 
@@ -345,6 +350,7 @@ function extract<C extends Component, P_Child = never, S_Child = never, P = C['p
     let child: ReactWrapper<Component, P_Child, S_Child> = undefined as any;
     let grandChildState = undefined as any;
     let grandChildProps = undefined as any;
+    let grandChild = undefined as any;
     if (wrapper.children().length == 1) {
         childState = wrapper.children().state();
         childProps = wrapper.children().props();
@@ -352,9 +358,10 @@ function extract<C extends Component, P_Child = never, S_Child = never, P = C['p
         if (child.length == 1) {
             grandChildState = child.state();
             grandChildProps = child.props();
+            grandChild = child.instance();
         }
     }
-    return { wrapper, state, props, childState, childProps, child, grandChildState, grandChildProps };
+    return { wrapper, state, props, childState, childProps, child, grandChildState, grandChildProps, grandChild };
 }
 
 
@@ -407,3 +414,12 @@ export class AllTypeDescriptions extends BaseTypeDescriptions implements TypeDes
 }
 
 export const typesystem = new TypeSystem<CheckableTypes & PrimitiveTypes>(new AllTypeDescriptions(), console.error);
+
+
+type x = SimpleStateInfo<RootWithNestedCounterProps, RootWithNestedCounterFromPropsState>;
+assertT<IsExact<x, { counter: TInfo<CounterFromProps, BaseState>, stateCounter: TInfo<CounterProps, BaseState> }>>(true);
+
+assertT<IsExact<x['counter'], TInfo<CounterFromProps, BaseState>>>(true);
+assertT<IsExact<x['counter'], { currentCountProp: true }>>(true);
+
+type asdf = x['counter'];
