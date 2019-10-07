@@ -29,6 +29,6 @@ export class MainWindowComponent extends BaseComponent<MainWindowProps, MainWind
 }
 
 // Returns whether properties of app is state of app. By default, the key is treated as props. 
-export const MainWindowStateInfo: TInfo<MainWindowProps, MainWindowState> = {
+export const MainWindowStateInfo: TInfo<MainWindowProps> = {
     rootEquation: true // rootEquation is props, so return true
 };

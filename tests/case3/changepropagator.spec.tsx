@@ -21,7 +21,7 @@ describe('ChangesPropagator', () => {
     beforeEach(() => container.resetAll());
 
     describe('EmptyRootComponent', () => {
-        const emptyRootStateInfo: SimpleStateInfo<EmptyRootProps, EmptyRootState> = { __id: true as true };
+        const emptyRootStateInfo: SimpleStateInfo<EmptyRootProps> = { };
         class EmptyRootComponent extends BaseComponent<EmptyRootProps, EmptyRootState> {
             constructor(props: EmptyRootProps) {
                 super(props, typesystem.verifyF('EmptyRootProps'), typesystem.verifyF('EmptyRootState'), typesystem.assertPartialF('EmptyRootState'));
@@ -40,7 +40,7 @@ describe('ChangesPropagator', () => {
         before(() => {
             initializePredefinedResponsesContainer([[{ propertyName: 'counter', id: 0, value: { currentCount: 2 } }]]);
         });
-        const counterRootStateInfo: SimpleStateInfo<CounterRootProps, CounterRootState> = { counter: false as false };
+        const counterRootStateInfo: SimpleStateInfo<CounterRootProps> = { counter: false as false };
         class CounterRootComponent extends BaseComponent<CounterRootProps, CounterRootState> {
             constructor(props: CounterRootProps) {
                 super(props, typesystem.verifyF('CounterRootProps'), typesystem.verifyF('CounterRootState'), typesystem.assertPartialF('CounterRootState'));
@@ -319,7 +319,7 @@ class CounterFromPropsComponent extends BaseComponent<CounterFromProps, CounterS
     }
     render() { return <div></div>; }
 
-    public static readonly StateInfo: SimpleStateInfo<CounterFromProps, CounterState>  = Object.freeze({ currentCountProp: true as true, currentCount: false as false });
+    public static readonly StateInfo: SimpleStateInfo<CounterFromProps>  = Object.freeze({ currentCountProp: true as true });
 }
 
 
@@ -414,12 +414,3 @@ export class AllTypeDescriptions extends BaseTypeDescriptions implements TypeDes
 }
 
 export const typesystem = new TypeSystem<CheckableTypes & PrimitiveTypes>(new AllTypeDescriptions(), console.error);
-
-
-type x = SimpleStateInfo<RootWithNestedCounterProps, RootWithNestedCounterFromPropsState>;
-assertT<IsExact<x, { counter: TInfo<CounterFromProps, BaseState>, stateCounter: TInfo<CounterProps, BaseState> }>>(true);
-
-assertT<IsExact<x['counter'], TInfo<CounterFromProps, BaseState>>>(true);
-assertT<IsExact<x['counter'], { currentCountProp: true }>>(true);
-
-type asdf = x['counter'];

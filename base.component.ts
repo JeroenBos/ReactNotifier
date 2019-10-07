@@ -19,10 +19,8 @@ import { IsExact } from 'jbsnorro-typesafety';
 
 export type StateFromProps<P> = {
 };
-export type TInfo<P, S> = {
-    [K in Exclude<keyof P, '__id' | keyof S>]: NonNullable<P[K]> extends { __id: any } ? TInfo<NonNullable<P[K]>, BaseState> : true
-} & {
-    [K in keyof S]: NonNullable<S[K]> extends { __id: any } ? TInfo<NonNullable<S[K]>, BaseState> : false
+export type TInfo<P> = {
+    [K in Exclude<keyof P, '__id'>]: NonNullable<P[K]> extends { __id: any } ? TInfo<NonNullable<P[K]>> : true
 };
 
 type typeSystemAssertion<T> = (x: T) => void;
@@ -35,7 +33,7 @@ export type PotentialChildProps<S extends BaseState> = Partial<NotNeverValues<{
 class TError<TMessage extends string, T> {
 }
 export type PotentialChildObjects<S extends BaseState> = (keyof PotentialChildProps<S>)[]
-export type SimpleStateInfo<P extends BaseProps, S extends BaseState> = Readonly<TInfo<P, S>>;// _SimpleStateInfo<P | S>;
+export type SimpleStateInfo<P extends BaseProps> = Readonly<TInfo<P>>;// _SimpleStateInfo<P | S>;
 type _SimpleStateInfo<S extends BaseState> = Partial<NotNeverValues<
     {
         [K in keyof S]: Exclude<S[K], null | undefined> extends BaseProps
@@ -115,7 +113,7 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
             console.warn('state was undefined. You need to override it as getter: field assignment is too late');
         this.state = this.server.register(this) as Readonly<S>; // server.register merges any changes with the default state
     }
-    public get stateInfo(): SimpleStateInfo<TProps , S>  {
+    public get stateInfo(): SimpleStateInfo<TProps>  {
         return { __id: true } as any;
     }
     // protected abstract get childProps(): PotentialChildProps<S>;
@@ -137,7 +135,7 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
         return this.getInitialState(this.props);;
     }
     /** The purpose of this property is to allow the ctor to access the abstract property 'stateInfo'. */
-    private get _stateInfo(): SimpleStateInfo<TProps, S> {
+    private get _stateInfo(): SimpleStateInfo<TProps> {
         return this.stateInfo;
     }
     public isComponent(propertyName: string | number): boolean {

@@ -15,7 +15,7 @@ export class AppComponent extends BaseComponent<AppProps, AppState> {
         };
     }
 
-    public get stateInfo(): SimpleStateInfo<AppProps, AppState> {
+    public get stateInfo(): SimpleStateInfo<AppProps> {
         return {
             window: MainWindowStateInfo
         };
