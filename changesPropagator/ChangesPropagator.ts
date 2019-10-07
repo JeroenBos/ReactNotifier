@@ -3,9 +3,7 @@ import { IChangePropagator, IComponent, BaseProps, BaseState, UNINITIALIZED_ID, 
 import { CommandInstruction } from './../commands/commandInstruction';
 import { Http } from './http';
 import { SerializedType, StateType, isComponentProps, isComponent } from './common';
-import { SimpleStateInfo, StateInfoLocalHelper } from '../base.component';
-import { assert, undefinedToFalse, isDevelopment, assertAreIdentical, groupBy } from 'jbsnorro';
-import { isFunction } from 'util';
+import { assert, isDevelopment, assertAreIdentical, groupBy } from 'jbsnorro';
 
 type StateInfo = any;
 type PropertyChange = (IPropertyChange | ICollectionItemAdded) & ComponentType & { isPropsChange: boolean };
@@ -269,29 +267,28 @@ export class ChangesPropagator implements IChangePropagator {
         }
     }
 
-    private getComponentIdOnWhichToDoTheChange(this: ChangesPropagator, _change: IPropertyChange | ICollectionItemAdded): number {
+    private getComponentIdOnWhichToDoTheChange(this: ChangesPropagator, change: IPropertyChange | ICollectionItemAdded): number {
         // the component to the change on is the first component in the path to the root such that
         // - it is not a view model AND 
         // - that the path.propertyName is in the state rather than props
 
-        const relation = this.parents.get(_change.id);
+        const relation = this.parents.get(change.id);
         if (relation === undefined) {
-            return _change.id;
+            return change.id;
         }
 
-        if (this.rootIds.includes(_change.id)) {
-            return _change.id;
+        if (this.rootIds.includes(change.id)) {
+            return change.id;
         }
 
 
         // traverse up until a relation is on state rather than on props:
-        let parentRelation = { propertyName: ChangesPropagator.IsPropertyChanged(_change) ? _change.propertyName : _change.index, parentId: _change.id };
+        let parentRelation = { propertyName: ChangesPropagator.IsPropertyChanged(change) ? change.propertyName : change.index, parentId: change.id };
 
         while (this.isOnViewModel(parentRelation) || this.isProps(parentRelation)) {
             const ancestorRelation = this.parents.get(parentRelation.parentId);
-            if (ancestorRelation === undefined)
-                throw new Error('You cannot change props on the root');
-            parentRelation = ancestorRelation;
+            assert(ancestorRelation !== undefined, 'You cannot change props on the root');
+            parentRelation = ancestorRelation!;
         }
 
         return parentRelation.parentId;

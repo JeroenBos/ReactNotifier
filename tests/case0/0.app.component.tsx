@@ -7,14 +7,15 @@ export class AppComponent extends BaseComponent<AppProps, AppState> {
     constructor(props: AppProps) {
         super(props, typesystem.verifyF('AppProps'), typesystem.verifyF('AppState'), typesystem.assertPartialF('AppState'));
     }
-    protected get defaultState(): Readonly<AppState> {
+    protected getInitialState(): Readonly<AppState> {
         return {
             counter: null, // means nothing except that it is initialized at null (we don't know the __id anyway)
         };
     }
 
-    public get stateInfo(): SimpleStateInfo<AppProps, AppState> {
+    public get stateInfo(): SimpleStateInfo<AppProps> {
         return {
+            counter: { currentCount: true }
             // counter is on state, so it is missing here
         };
     }

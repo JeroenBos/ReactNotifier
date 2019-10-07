@@ -1,10 +1,27 @@
 import * as React from 'react';
-import { NotNeverValues, IsNotNever } from 'jbsnorro-typesafety/typeHelper';
+import { NotNeverValues, IsNotNever, assert as assertT } from 'jbsnorro-typesafety/typeHelper';
 import { BaseState, BaseProps, IComponent, isReference } from './base.interfaces';
 import container from './IoC/container';
 import { TempIdProvider } from './tempIdProvider';
 import { identifiers } from './IoC/keys';
-import { ResettableContainer, assert, UncheckedOmit } from 'jbsnorro';
+import { ResettableContainer, UncheckedOmit, assert } from 'jbsnorro';
+import { IsExact } from 'jbsnorro-typesafety';
+
+
+
+
+// The state info attribute has the following information:
+// - it has two type parameters, P and S
+// - for each attribute A on P ⋃ S
+//   the state info has an attribute named A with value 
+//      the state attribute                     if (P ⋃ S).A extends { __id: any }
+//      A ∈ S                                   otherwise
+
+export type StateFromProps<P> = {
+};
+export type TInfo<P> = {
+    [K in Exclude<keyof P, '__id'>]: NonNullable<P[K]> extends { __id: any } ? TInfo<NonNullable<P[K]>> : true
+};
 
 type typeSystemAssertion<T> = (x: T) => void;
 type typeSystemAssertionPartial<T> = (x: Partial<T>) => void;
@@ -16,7 +33,7 @@ export type PotentialChildProps<S extends BaseState> = Partial<NotNeverValues<{
 class TError<TMessage extends string, T> {
 }
 export type PotentialChildObjects<S extends BaseState> = (keyof PotentialChildProps<S>)[]
-export type SimpleStateInfo<P extends BaseProps, S extends BaseState> = _SimpleStateInfo<P | S>;
+export type SimpleStateInfo<P extends BaseProps> = Readonly<TInfo<P>>;// _SimpleStateInfo<P | S>;
 type _SimpleStateInfo<S extends BaseState> = Partial<NotNeverValues<
     {
         [K in keyof S]: Exclude<S[K], null | undefined> extends BaseProps
@@ -33,6 +50,7 @@ export type StateInfoLocalHelper<P, S> =
             [K in keyof S]?: false | undefined // missing means it is part of state, i.e. doesn't have to be translated to a parent change
         }
     );
+
 // export type InitialState<S> = { readonly [K in keyof S]: S[K] | MySpeci
 export abstract class BaseComponent<TProps extends BaseProps, S extends BaseState>
     extends React.Component<TProps, S>
@@ -95,7 +113,9 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
             console.warn('state was undefined. You need to override it as getter: field assignment is too late');
         this.state = this.server.register(this) as Readonly<S>; // server.register merges any changes with the default state
     }
-    public abstract get stateInfo(): SimpleStateInfo<TProps, S>;
+    public get stateInfo(): SimpleStateInfo<TProps>  {
+        return { __id: true } as any;
+    }
     // protected abstract get childProps(): PotentialChildProps<S>;
     // protected abstract get nonComponents(): PotentialChildObjects<S>;
 
@@ -112,10 +132,10 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
 
     /** The purpose of this property is to allow the ctor to access the abstract property 'defaultState'. */
     private get _defaultState(): Readonly<S> {
-        return this.defaultState;
+        return this.getInitialState(this.props);;
     }
     /** The purpose of this property is to allow the ctor to access the abstract property 'stateInfo'. */
-    private get _stateInfo(): SimpleStateInfo<TProps, S> {
+    private get _stateInfo(): SimpleStateInfo<TProps> {
         return this.stateInfo;
     }
     public isComponent(propertyName: string | number): boolean {
@@ -127,7 +147,11 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
      * Initialization at null is standard in that case, otherwise, if it represents a component, the initialized value must be valid props (or via the render function at least).
      * Possibly UNINITIALIZED_ID can be used at __id
      */
-    protected abstract get defaultState(): Readonly<S>;
+    protected abstract getInitialState(props: Readonly<TProps>): Readonly<S>;
+    UNSAFE_componentWillReceiveProps(nextProps: Readonly<TProps>) {
+        if (this.props !== nextProps)
+            this.setState(() => this.getInitialState(nextProps));
+    }
     componentDidMount() {
     }
     componentWillUnmount() {
