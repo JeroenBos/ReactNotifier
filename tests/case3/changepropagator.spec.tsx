@@ -21,7 +21,7 @@ describe('ChangesPropagator', () => {
     beforeEach(() => container.resetAll());
 
     describe('EmptyRootComponent', () => {
-        const emptyRootStateInfo: SimpleStateInfo<EmptyRootProps> = { };
+        const emptyRootStateInfo: SimpleStateInfo<EmptyRootProps> = {};
         class EmptyRootComponent extends BaseComponent<EmptyRootProps, EmptyRootState> {
             constructor(props: EmptyRootProps) {
                 super(props, typesystem.verifyF('EmptyRootProps'), typesystem.verifyF('EmptyRootState'), typesystem.assertPartialF('EmptyRootState'));
@@ -109,9 +109,9 @@ describe('ChangesPropagator', () => {
                     [{ propertyName: 'currentCount', id: counterId, value: 2 }], // increment counter directly on state
                     [{ propertyName: 'currentCountProp', id: counterId, value: 3 }], // increment counter via props
                 ]);
-                
+
         });
-      
+
         class Root extends BaseComponent<RootWithNestedCounterProps, RootWithNestedCounterFromPropsState> {
             constructor(props: RootWithNestedCounterProps) {
                 super(props, typesystem.verifyF('RootWithNestedCounterProps'), typesystem.verifyF('RootWithNestedCounterFromPropsState'), typesystem.assertPartialF('RootWithNestedCounterFromPropsState'));
@@ -196,7 +196,7 @@ describe('ChangesPropagator', () => {
         it('Can register counter on RootWithNestedCounter', async () => {
             const { wrapper } = mountAndExtract<Root>(<Root __id={rootId} />);
             await executeNextCommand(2); // register nested component at root and counter at nested component
-            const { grandChildState }  = updateAndExtract<Root>(wrapper);
+            const { grandChildState } = updateAndExtract<Root>(wrapper);
             assert(grandChildState.currentCount == 1);
         });
         it('Can increment counter on RootWithNestedCounter', async () => {
@@ -223,15 +223,9 @@ describe('ChangesPropagator', () => {
             });
             it('Can register counter on nested component', async () => {
                 const { wrapper } = mountAndExtract<Root>(<Root __id={rootId} />);
-                await executeNextCommand(2);
-                const grandChildState: CounterState = updateAndExtract<Root>(wrapper).grandChildState;
-                assert(grandChildState.currentCount == 0);
-            });
-            it('Can register counter on nested component', async () => {
-                const { wrapper } = mountAndExtract<Root>(<Root __id={rootId} />);
                 await executeNextCommand(2); // register nested component at root and counter at nested component
                 const grandChildState: CounterState = updateAndExtract<Root>(wrapper).grandChildState;
-                assert(grandChildState.currentCount == 1);
+                assert(grandChildState.currentCount == 0);
             });
             it('Can increment counter on nested component', async () => {
                 const { wrapper } = mountAndExtract<Root>(<Root __id={rootId} />);
@@ -317,7 +311,7 @@ class CounterFromPropsComponent extends BaseComponent<CounterFromProps, CounterS
     }
     render() { return <div></div>; }
 
-    public static readonly StateInfo: SimpleStateInfo<CounterFromProps>  = Object.freeze({ currentCountProp: true as true });
+    public static readonly StateInfo: SimpleStateInfo<CounterFromProps> = Object.freeze({ currentCountProp: true as true });
 }
 
 
@@ -348,6 +342,7 @@ function extract<C extends Component, P_Child = never, S_Child = never, P = C['p
     let childProps: P_Child = undefined as any;
     let grandChildState = undefined as any;
     let grandChildProps = undefined as any;
+
     if (child.length == 1) {
         childState = child.state();
         childProps = child.props();
