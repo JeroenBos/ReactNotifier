@@ -194,11 +194,10 @@ describe('ChangesPropagator', () => {
             assert(child.children().length == 0);
         });
         it('Can register counter on RootWithNestedCounter', async () => {
-            debugger;
             const { wrapper } = mountAndExtract<Root>(<Root __id={rootId} />);
             await executeNextCommand(2); // register nested component at root and counter at nested component
-            const grandChildState = updateAndExtract<Root>(wrapper);
-            assert(grandChildState.grandChildState.currentCount == 1);
+            const { grandChildState }  = updateAndExtract<Root>(wrapper);
+            assert(grandChildState.currentCount == 1);
         });
         it('Can increment counter on RootWithNestedCounter', async () => {
             const { wrapper } = mountAndExtract<Root>(<Root __id={rootId} />);
@@ -314,7 +313,6 @@ class CounterFromPropsComponent extends BaseComponent<CounterFromProps, CounterS
     }
     public get stateInfo() { return { currentCountProp: true as true, currentCount: false as false }; }
     protected getInitialState(props: Readonly<CounterFromProps>): Readonly<CounterState> {
-
         return { currentCount: props.currentCountProp };
     }
     render() { return <div></div>; }
@@ -345,23 +343,21 @@ function extract<C extends Component, P_Child = never, S_Child = never, P = C['p
     const props = wrapper.props();
 
     assert(wrapper.children().length <= 1);
+    const child: ReactWrapper<Component, P_Child, S_Child> = wrapper.children();
     let childState: S_Child = undefined as any;
     let childProps: P_Child = undefined as any;
-    let child: ReactWrapper<Component, P_Child, S_Child> = undefined as any;
     let grandChildState = undefined as any;
     let grandChildProps = undefined as any;
-    let grandChild = undefined as any;
-    if (wrapper.children().length == 1) {
-        childState = wrapper.children().state();
-        childProps = wrapper.children().props();
-        child = wrapper.children();
-        if (child.length == 1) {
-            grandChildState = child.state();
-            grandChildProps = child.props();
-            grandChild = child.instance();
+    if (child.length == 1) {
+        childState = child.state();
+        childProps = child.props();
+        const grandChild = child.children();
+        if (grandChild.length == 1) {
+            grandChildState = grandChild.state();
+            grandChildProps = grandChild.props();
         }
     }
-    return { wrapper, state, props, childState, childProps, child, grandChildState, grandChildProps, grandChild };
+    return { wrapper, state, props, childState, childProps, child, grandChildState, grandChildProps };
 }
 
 
