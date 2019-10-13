@@ -19,9 +19,13 @@ import { IsExact } from 'jbsnorro-typesafety';
 
 export type StateFromProps<P> = {
 };
+/**
+ * So for each prop on the props you specify `true`, even if you never want that property to be settable by the change propagator
+ */
 export type TInfo<P> = {
-    [K in Exclude<keyof P, '__id'>]: NonNullable<P[K]> extends { __id: any } ? TInfo<NonNullable<P[K]>> : true
+    [K in Exclude<keyof P, '__id'>]: NonNullable<P[K]> extends { __id: any } ? TInfo<NonNullable<P[K]>> : boolean
 };
+
 
 type typeSystemAssertion<T> = (x: T) => void;
 type typeSystemAssertionPartial<T> = (x: Partial<T>) => void;
