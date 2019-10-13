@@ -324,7 +324,7 @@ export function mountAndExtract<C extends Component, P_Child = never, S_Child = 
 }
 async function executeNextCommand(n: number = 1): Promise<void> {
     for (let i = 0; i < n; i++) {
-        await container.server.executeCommand(MockCommandInstruction); // executes assignEquationToWindowResponse
+        await container.server.executeCommand(MockCommandInstruction);
     }
 }
 
