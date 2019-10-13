@@ -9,7 +9,7 @@ export { AbstractCommandManager, CommandManagerProps, CommandManagerState } from
 export { CommandInstruction } from './commands/commandInstruction';
 export { CommandViewModel } from './commands/commands';
 export { PromiseFactory } from './core';
-export { defaultTempIdProviderProvider, mockHttpProvider, defaultServerProvider, defaultCommandManagerProvider, ITestResponse, MockCommandInstruction } from './IoC/defaults';
+export { defaultTempIdProviderProvider, mockHttpProvider, defaultServerProvider, defaultCommandManagerProvider, ITestResponse, MockCommandInstruction, ITestChange } from './IoC/defaults';
 export { identifiers, TServices } from './IoC/keys';
 export { TempIdProvider } from './tempIdProvider';
 
