@@ -1,8 +1,9 @@
 import { InputEvent } from './commands/inputTypes';
 import { CommandInstruction } from './commands/commandInstruction';
 import { CommandManagerState } from './commands/abstractCommandManager';
-import { SerializedType, AdmissiblePrimitiveType, StateType } from './changesPropagator/common';
+import { StateType } from './changesPropagator/common';
 import { SimpleStateInfo } from './base.component';
+
 export interface BaseState {
 }
 export interface BaseProps {
