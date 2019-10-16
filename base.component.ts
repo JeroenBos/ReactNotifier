@@ -117,7 +117,7 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
             console.warn('state was undefined. You need to override it as getter: field assignment is too late');
         this.state = this.server.register(this) as Readonly<S>; // server.register merges any changes with the default state
     }
-    public get stateInfo(): SimpleStateInfo<TProps>  {
+    public get stateInfo(): SimpleStateInfo<TProps> {
         return { __id: true } as any;
     }
     // protected abstract get childProps(): PotentialChildProps<S>;
@@ -159,7 +159,6 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
     componentDidMount() {
     }
     componentWillUnmount() {
-        console.debug(`unmounting ${Object.getPrototypeOf(this).constructor.name}`);
         this.server.unregister(this);
     }
 
