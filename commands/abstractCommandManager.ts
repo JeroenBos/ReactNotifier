@@ -9,9 +9,9 @@ import { SimpleStateInfo } from '../base.component';
 
 export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerState> {
     isComponent(_propertyName: string | number): boolean {
-        throw new Error('not implemented');
+        return false;
     }
-    public readonly stateInfo: SimpleStateInfo<Omit<CommandManagerProps, 'server'>> = { };
+    public readonly stateInfo: SimpleStateInfo<Omit<CommandManagerProps, 'server'>> = {};
     // public readonly stateInfo: SimpleStateInfo<AppState> = {
     // a list of properties of AppState that represents props. Of each such property K, we have a props type P and state type S
     // An entry should exist with name K and return true whenever a keyof P is specified

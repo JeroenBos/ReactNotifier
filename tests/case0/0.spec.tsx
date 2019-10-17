@@ -10,7 +10,9 @@ import { ITestResponse, MockCommandInstruction } from '../../IoC/defaults';
 import { counterInitResponse, counterRefResponse, counterIncrementResponse, counterIncrementTwiceResponse } from '../responses';
 import { typesystem } from './0.typesystem';
 import container from '../../IoC/container';
-import { assert } from 'jbsnorro';
+import { assert, AbstractProvider } from 'jbsnorro';
+import { AbstractCommandManager } from '../../commands/abstractCommandManager';
+import { ChangesPropagator } from '../../changesPropagator/ChangesPropagator';
 
 ///////////// initialization: /////////////
 const rootIds: number[] = [AppId, CommandManagerId];
@@ -26,7 +28,7 @@ describe('0. App { Counter }', () => {
     before(() => {
         container.rebind(identifiers.typesystem).toConstantValue(typesystem);
         container.rebind(identifiers.rootIds).toConstantValue(rootIds);
-        container.rebind<ITestResponse[]>(identifiers.responses).toConstantValue(responses);
+        container.bindResettableProvider(identifiers.responses, AbstractProvider.create(() => responses));
         container.assertIsFullyBound();
     });
     let app: ReactWrapper<AppComponent>;
@@ -77,5 +79,60 @@ describe('0. App { Counter }', () => {
         if (counterState == null)
             throw new Error();
         assert(counterState.currentCount === 2);
+    });
+
+    describe('AbstractCommandManager', async () => {
+        const commandName = 'IncrementCounterOnce';
+        let app: ReactWrapper<AppComponent>;
+        let commandManager: AbstractCommandManager;
+        let server: ChangesPropagator;
+        beforeEach(async () => {
+            container.resetAll();
+            app = mount<AppComponent>(<AppComponent __id={AppId} />);
+            await container.server.executeCommand({ commandName: 'Empty', viewModelId: AppId, eventArgs: {} });
+            await container.server.executeCommand({ commandName, viewModelId: AppId, eventArgs: {} });
+            app.update();
+            commandManager = container.commandManager;
+            server = container.server;
+        });
+
+        it('All changes were propagated', () => {
+            assert(commandManager != null);
+            assert(!server.hasDanglingState);
+        });
+
+        it('trigger isComponent', async () => {
+            const response = JSON.parse(`{"changes":[{"propertyName":"commandManager","value":{"isCollection":false,"__id":1},"id":0},
+             {"propertyName":"commands","value":{"isCollection":false,"__id":3},"id":1}],"rerequest":false}`);
+            (server as any).processResponse(response);
+
+            const isCommandPropertyComponent = (server as any).parents.get(3)._isComponent;
+            assert(!isCommandPropertyComponent);
+
+            // attempt at achieving the above neatly:
+            //
+            // const response: ITestResponse = [
+            //     {
+            //         id: 0,
+            //         propertyName: "commandManager",
+            //         value: {
+            //             id: 1
+            //         }
+            //     },
+            //     {
+            //         id: 1,
+            //         propertyName: "commands",
+            //         value: {
+            //             id: 3
+            //         }
+            //     }
+            // ];
+            // container.rebind(identifiers.responses).toConstantValue(response);
+            // await container.server.executeCommand({ commandName: 'Empty', viewModelId: AppId, eventArgs: {} });
+            // app.update();
+            //
+            // const isCommandPropertyComponent = (server as any).parents.get(3)._isComponent;
+            // assert(!isCommandPropertyComponent);
+        });
     });
 });

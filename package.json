@@ -1,6 +1,6 @@
 {
   "name": "jbsnorro-reactnotifier",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "A library for mapping changes (from ASP.NET Core) onto TypeScript/React components.",
   "main": "dist/jbsnorro_reactnotifier.js",
   "types": "dist/types/index.d.ts",

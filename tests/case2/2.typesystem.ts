@@ -21,6 +21,6 @@ class NewTypeDescriptions implements TypeDescriptionsFor<newCheckableTypes> {
     public readonly MainWindowState = create<MainWindowState>({ rootEquation: 'string' });
 }
 
-export const AllTypeDescriptions1: TypeDescriptionsFor<CheckableTypes1 & PrimitiveTypes> = { ...new AllTypeDescriptions0(), ...new NewTypeDescriptions() };
+export const AllTypeDescriptions1 = { ...new AllTypeDescriptions0(), ...new NewTypeDescriptions() };
 
-export const typesystem = new TypeSystem(AllTypeDescriptions1, console.error);
+export const typesystem = new TypeSystem<CheckableTypes1 & PrimitiveTypes>(AllTypeDescriptions1, console.error);
