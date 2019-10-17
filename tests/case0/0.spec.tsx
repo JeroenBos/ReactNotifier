@@ -88,9 +88,6 @@ describe('0. App { Counter }', () => {
         let server: ChangesPropagator;
         beforeEach(async () => {
             container.resetAll();
-            console.log(container);
-            console.log(container.responses);
-            debugger;
             app = mount<AppComponent>(<AppComponent __id={AppId} />);
             await container.server.executeCommand({ commandName: 'Empty', viewModelId: AppId, eventArgs: {} });
             await container.server.executeCommand({ commandName, viewModelId: AppId, eventArgs: {} });
@@ -104,8 +101,38 @@ describe('0. App { Counter }', () => {
             assert(!server.hasDanglingState);
         });
 
-        // it('increment counter command exists', () => {
-        //     assert(commandManager.hasCommand(commandName));
-        // });
+        it('trigger isComponent', async () => {
+            const response = JSON.parse(`{"changes":[{"propertyName":"commandManager","value":{"isCollection":false,"__id":1},"id":0},
+             {"propertyName":"commands","value":{"isCollection":false,"__id":3},"id":1}],"rerequest":false}`);
+            (server as any).processResponse(response);
+
+            const isCommandPropertyComponent = (server as any).parents.get(3)._isComponent;
+            assert(!isCommandPropertyComponent);
+
+            // attempt at achieving the above neatly:
+            //
+            // const response: ITestResponse = [
+            //     {
+            //         id: 0,
+            //         propertyName: "commandManager",
+            //         value: {
+            //             id: 1
+            //         }
+            //     },
+            //     {
+            //         id: 1,
+            //         propertyName: "commands",
+            //         value: {
+            //             id: 3
+            //         }
+            //     }
+            // ];
+            // container.rebind(identifiers.responses).toConstantValue(response);
+            // await container.server.executeCommand({ commandName: 'Empty', viewModelId: AppId, eventArgs: {} });
+            // app.update();
+            //
+            // const isCommandPropertyComponent = (server as any).parents.get(3)._isComponent;
+            // assert(!isCommandPropertyComponent);
+        });
     });
 });
