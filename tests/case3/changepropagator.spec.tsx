@@ -357,10 +357,8 @@ function extract<C extends Component, P_Child = never, S_Child = never, P = C['p
 
 
 
-import { OptionalToMissing, createCreateFunction, PrimitiveTypes, TypeSystem, nullable, BaseTypeDescriptions, TypeDescriptionsFor } from 'jbsnorro-typesafety';
+import { OptionalToMissing, PrimitiveTypes, TypeSystem, nullable, BaseTypeDescriptions, TypeDescriptionsFor } from 'jbsnorro-typesafety';
 import { CommandManagerProps, CommandManagerState } from '../../commands/abstractCommandManager';
-
-const create = <T extends object>() => createCreateFunction<CheckableTypes & PrimitiveTypes, T>();
 
 export type CheckableTypes = OptionalToMissing<{
     'EmptyRootProps': EmptyRootProps,
@@ -383,25 +381,25 @@ export type CheckableTypes = OptionalToMissing<{
     'CommandManagerState': CommandManagerState,
 }>
 
-export class AllTypeDescriptions extends BaseTypeDescriptions implements TypeDescriptionsFor<CheckableTypes> {
-    public readonly 'EmptyRootProps' = create<EmptyRootProps>()({ __id: 'number' });
-    public readonly 'EmptyRootState' = create<EmptyRootState>()({});
-    public readonly 'CounterRootProps' = create<CounterRootProps>()({ __id: 'number' });
-    public readonly 'CounterRootState' = create<CounterRootState>()({ counter: 'Counter' });
-    public readonly 'Counter' = create<{ currentCount: number }>()({ currentCount: 'number' });
-    public readonly 'CounterProps' = create<CounterProps>()({ __id: 'number' });
+export class AllTypeDescriptions extends BaseTypeDescriptions<CheckableTypes> implements TypeDescriptionsFor<CheckableTypes> {
+    public readonly 'EmptyRootProps' = this.create<EmptyRootProps>({ __id: 'number' });
+    public readonly 'EmptyRootState' = this.create<EmptyRootState>({});
+    public readonly 'CounterRootProps' = this.create<CounterRootProps>({ __id: 'number' });
+    public readonly 'CounterRootState' = this.create<CounterRootState>({ counter: 'Counter' });
+    public readonly 'Counter' = this.create<{ currentCount: number }>({ currentCount: 'number' });
+    public readonly 'CounterProps' = this.create<CounterProps>({ __id: 'number' });
     public readonly 'nullable CounterProps' = nullable(this['CounterProps']);
-    public readonly 'CounterState' = create<CounterState>()({ currentCount: 'number' });
-    public readonly 'RootWithNestedCounterProps' = create<RootWithNestedCounterProps>()({ __id: 'number' });
-    public readonly 'RootWithNestedCounterState' = create<RootWithNestedCounterState>()({ counter: 'nullable CounterProps' });
-    public readonly 'CounterFromProps' = create<CounterFromProps>()({ __id: 'number', currentCountProp: 'number' });
+    public readonly 'CounterState' = this.create<CounterState>({ currentCount: 'number' });
+    public readonly 'RootWithNestedCounterProps' = this.create<RootWithNestedCounterProps>({ __id: 'number' });
+    public readonly 'RootWithNestedCounterState' = this.create<RootWithNestedCounterState>({ counter: 'nullable CounterProps' });
+    public readonly 'CounterFromProps' = this.create<CounterFromProps>({ __id: 'number', currentCountProp: 'number' });
     public readonly 'nullable CounterFromProps' = nullable(this['CounterFromProps']);
-    public readonly 'RootWithNestedCounterFromPropsState' = create<RootWithNestedCounterFromPropsState>()({ counter: 'nullable CounterFromProps', stateCounter: 'nullable CounterProps' });
+    public readonly 'RootWithNestedCounterFromPropsState' = this.create<RootWithNestedCounterFromPropsState>({ counter: 'nullable CounterFromProps', stateCounter: 'nullable CounterProps' });
     public readonly 'RootWithNestedRootProps' = this['EmptyRootProps'];
-    public readonly 'RootWithNestedRootState' = create<RootWithNestedRootState>()({ nestedComponent: 'nullable CounterProps' });
-    public readonly 'CommandManagerProps' = create<CommandManagerProps>()({ server: 'any!', __id: 'number' });
+    public readonly 'RootWithNestedRootState' = this.create<RootWithNestedRootState>({ nestedComponent: 'nullable CounterProps' });
+    public readonly 'CommandManagerProps' = this.create<CommandManagerProps>({ server: 'any!', __id: 'number' });
     public readonly 'nullable CommandManagerProps' = nullable(this['CommandManagerProps']);
-    public readonly 'CommandManagerState' = create<CommandManagerState>()({ commands: 'any!', flags: 'any!', inputBindings: 'any!' });
+    public readonly 'CommandManagerState' = this.create<CommandManagerState>({ commands: 'any!', flags: 'any!', inputBindings: 'any!' });
 }
 
 export const typesystem = new TypeSystem<CheckableTypes & PrimitiveTypes>(new AllTypeDescriptions(), console.error);
