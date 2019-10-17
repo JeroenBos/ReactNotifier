@@ -1,1 +1,7 @@
 *.png
+.vscode\**
+tests\**
+# ignore .ts
+*.ts
+# but include d.ts:
+!*.d.ts
