@@ -22,4 +22,4 @@ export class AllTypeDescriptions0 extends BaseTypeDescriptions<CheckableTypes0> 
     public readonly 'nullable Counter' = nullable(this['Counter']);
 }
 
-export const typesystem = new TypeSystem(new AllTypeDescriptions0() as TypeDescriptionsFor<CheckableTypes0 & PrimitiveTypes>, console.error);
+export const typesystem = new TypeSystem<CheckableTypes0 & PrimitiveTypes>(new AllTypeDescriptions0(), console.error);
