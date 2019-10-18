@@ -25,7 +25,6 @@ export class TypedContainer extends ResettableContainer<TServices> implements TS
         return this.getProvider(identifiers.typesystem).provide();
     }
 
-
     resetAll() {
         assert(this.isBound(identifiers.rootIds), 'rootIds must be bound before calling resetAll');
         super.resetAll();

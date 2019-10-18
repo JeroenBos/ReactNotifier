@@ -17,7 +17,9 @@ export interface TServices {
     readonly typesystem: TypeSystem<any>;
 }
 
-export const identifiers: Readonly<{ [K in keyof TServices]: K }> = Object.freeze({
+export type TIdentifiers<TServices> = Readonly<{ [K in keyof TServices]: K; }>;
+
+export const identifiers: TIdentifiers<TServices> = Object.freeze({
     rootIds: 'rootIds',
     commandManager: 'commandManager',
     server: 'server',
