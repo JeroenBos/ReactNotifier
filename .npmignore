@@ -1,6 +1,8 @@
 *.png
 .vscode\**
 tests\**
+dist\types\tests\**
+dist\types\node_modules\**
 # ignore .ts
 *.ts
 # but include d.ts:
