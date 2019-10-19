@@ -1,13 +1,10 @@
 import * as React from 'react';
-import { NotNeverValues, IsNotNever, assert as assertT } from 'jbsnorro-typesafety/typeHelper';
-import { BaseState, BaseProps, IComponent, isReference } from './base.interfaces';
+import { NotNeverValues, IsNotNever, GetKey } from 'jbsnorro-typesafety/typeHelper';
+import { BaseState, BaseProps, IComponent } from './base.interfaces';
 import container from './IoC/container';
-import { TempIdProvider } from './tempIdProvider';
 import { identifiers } from './IoC/keys';
-import { ResettableContainer, UncheckedOmit, assert } from 'jbsnorro';
-import { IsExact } from 'jbsnorro-typesafety';
-
-
+import { UncheckedOmit } from 'jbsnorro';
+import { TypeSystem, PrimitiveTypes } from 'jbsnorro-typesafety';
 
 
 // The state info attribute has the following information:
@@ -56,7 +53,7 @@ export type StateInfoLocalHelper<P, S> =
     );
 
 // export type InitialState<S> = { readonly [K in keyof S]: S[K] | MySpeci
-export abstract class BaseComponent<TProps extends BaseProps, S extends BaseState>
+export abstract class BaseComponent<TProps extends BaseProps, S extends BaseState, CheckableTypes extends PrimitiveTypes>
     extends React.Component<TProps, S>
     implements IComponent<S, TProps> {
 
@@ -99,19 +96,29 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
     // The absence of a function indicates that they're all props, i.e. that they should all be set via the setState of the current component.
     // is that different from a function returning false?
 
+
+    private readonly verifyState: typeSystemAssertion<S>;
+    private readonly verifyPartialState: typeSystemAssertionPartial<S>;
     public constructor(props: TProps,
-        private readonly verifyProps: typeSystemAssertion<TProps>,
-        private readonly verifyState: typeSystemAssertion<S>,
-        private readonly verifyPartialState: typeSystemAssertionPartial<S>
+        typesystem: TypeSystem<CheckableTypes>,
+        propsTypeKey: GetKey<TProps, CheckableTypes>,
+        stateTypeKey: GetKey<S, CheckableTypes>,
     ) {
         super(props);
-
-        if (verifyProps == undefined) throw new Error(`Argument 'verifyProps' is null or undefined`);
-        if (verifyState == undefined) throw new Error(`Argument 'verifyState' is null or undefined`);
-        if (verifyPartialState == undefined) throw new Error(`Argument 'verifyPartialState' is null or undefined`);
+        if (props == undefined) throw new Error(`Argument 'props' is null or undefined`);
+        if (typesystem == undefined) throw new Error(`Argument 'typesystem' is null or undefined`);
+        if (propsTypeKey == undefined) throw new Error(`Argument 'propsTypeKey' is null or undefined`);
+        if (stateTypeKey == undefined) throw new Error(`Argument 'stateTypeKey' is null or undefined`);
+        if (!typesystem.hasDescription(propsTypeKey)) throw new Error(`Argument 'propsTypeKey':'${propsTypeKey}' is not a key in the specified type system`);
+        if (!typesystem.hasDescription(stateTypeKey)) throw new Error(`Argument 'propsTypeKey':'${stateTypeKey}' is not a key in the specified type system`);
         if (this._stateInfo === undefined) throw new Error('state info is missing. You need to override it as getter: field assignment is too late');
 
-        this.verifyProps(props);
+        const verifyProps = typesystem.assertF(propsTypeKey as any);
+        this.verifyState = typesystem.assertF(stateTypeKey as any);
+        this.verifyPartialState = typesystem.isPartialF(stateTypeKey as any);
+
+
+        verifyProps(props);
         this.state = this._defaultState;
         if (this.state === undefined)
             console.warn('state was undefined. You need to override it as getter: field assignment is too late');

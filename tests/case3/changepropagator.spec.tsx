@@ -9,7 +9,6 @@ import initializePredefinedResponsesContainer from './container';
 import { ReactWrapper } from '../enzyme.wrapper';
 import { MockCommandInstruction } from '../../IoC/defaults';
 import { assert } from 'jbsnorro';
-import { assert as assertT, IsExact } from 'jbsnorro-typesafety/typeHelper';
 
 const rootId = 0;
 
@@ -22,9 +21,9 @@ describe('ChangesPropagator', () => {
 
     describe('EmptyRootComponent', () => {
         const emptyRootStateInfo: SimpleStateInfo<EmptyRootProps> = {};
-        class EmptyRootComponent extends BaseComponent<EmptyRootProps, EmptyRootState> {
+        class EmptyRootComponent extends BaseComponent<EmptyRootProps, EmptyRootState, CheckableTypes & PrimitiveTypes> {
             constructor(props: EmptyRootProps) {
-                super(props, typesystem.verifyF('EmptyRootProps'), typesystem.verifyF('EmptyRootState'), typesystem.assertPartialF('EmptyRootState'));
+                super(props, typesystem, 'EmptyRootProps', 'EmptyRootState');
             }
             public get stateInfo() { return emptyRootStateInfo; }
             protected getInitialState(): Readonly<EmptyRootState> { return {}; };
@@ -41,9 +40,9 @@ describe('ChangesPropagator', () => {
             initializePredefinedResponsesContainer([[{ propertyName: 'counter', id: 0, value: { currentCount: 2 } }]]);
         });
         const counterRootStateInfo: SimpleStateInfo<CounterRootProps> = { counter: false as false };
-        class CounterRootComponent extends BaseComponent<CounterRootProps, CounterRootState> {
+        class CounterRootComponent extends BaseComponent<CounterRootProps, CounterRootState, CheckableTypes & PrimitiveTypes> {
             constructor(props: CounterRootProps) {
-                super(props, typesystem.verifyF('CounterRootProps'), typesystem.verifyF('CounterRootState'), typesystem.assertPartialF('CounterRootState'));
+                super(props, typesystem, 'CounterRootProps', 'CounterRootState');
             }
             public get stateInfo() { return counterRootStateInfo; }
             protected getInitialState(): Readonly<CounterRootState> { return { counter: { currentCount: 1 } } };
@@ -72,13 +71,13 @@ describe('ChangesPropagator', () => {
                     [{ propertyName: 'currentCount', id: counterId, value: 1 }], // increment counter
                 ]);
         });
-        class RootWithNestedCounterComponent extends BaseComponent<RootWithNestedCounterProps, RootWithNestedCounterState> {
+        class RootWithNestedCounterComponent extends BaseComponent<RootWithNestedCounterProps, RootWithNestedCounterState, CheckableTypes & PrimitiveTypes> {
             constructor(props: RootWithNestedCounterProps) {
-                super(props, typesystem.verifyF('RootWithNestedCounterProps'), typesystem.verifyF('RootWithNestedCounterState'), typesystem.assertPartialF('RootWithNestedCounterState'));
+                super(props, typesystem, 'RootWithNestedCounterProps', 'RootWithNestedCounterState');
             }
             public get stateInfo() { return { 'counter': false as false }; }
             protected getInitialState(): Readonly<RootWithNestedCounterState> { return { counter: null }; }
-            render() { return this.state.counter == null ? null : < CounterComponent __id={counterId} />; }
+            render() { return this.state.counter == null ? null : <CounterComponent __id={counterId} />; }
         }
 
         it('Can mount RootWithNestedCounter', () => {
@@ -112,9 +111,9 @@ describe('ChangesPropagator', () => {
 
         });
 
-        class Root extends BaseComponent<RootWithNestedCounterProps, RootWithNestedCounterFromPropsState> {
+        class Root extends BaseComponent<RootWithNestedCounterProps, RootWithNestedCounterFromPropsState, CheckableTypes & PrimitiveTypes> {
             constructor(props: RootWithNestedCounterProps) {
-                super(props, typesystem.verifyF('RootWithNestedCounterProps'), typesystem.verifyF('RootWithNestedCounterFromPropsState'), typesystem.assertPartialF('RootWithNestedCounterFromPropsState'));
+                super(props, typesystem,'RootWithNestedCounterProps', 'RootWithNestedCounterFromPropsState');
             }
             public get stateInfo() { return { counter: CounterFromPropsComponent.StateInfo, stateCounter: true }; }
             protected getInitialState(): Readonly<RootWithNestedCounterFromPropsState> { return { counter: null, stateCounter: null }; }
@@ -162,18 +161,18 @@ describe('ChangesPropagator', () => {
         });
         type S = RootWithNestedRootState;
         type P = RootWithNestedRootProps;
-        class Root extends BaseComponent<P, S> {
+        class Root extends BaseComponent<P, S, CheckableTypes & PrimitiveTypes> {
             constructor(props: RootWithNestedCounterProps) {
-                super(props, typesystem.verifyF('RootWithNestedRootProps'), typesystem.verifyF('RootWithNestedRootState'), typesystem.assertPartialF('RootWithNestedRootState'));
+                super(props, typesystem,'RootWithNestedRootProps','RootWithNestedRootState');
             }
             protected getInitialState(): Readonly<S> { return { nestedComponent: null }; }
             render() { return this.state.nestedComponent == null ? null : <NestedComponent __id={this.state.nestedComponent.__id} />; }
         }
 
         // copied from above
-        class NestedComponent extends BaseComponent<RootWithNestedCounterProps, RootWithNestedCounterFromPropsState> {
+        class NestedComponent extends BaseComponent<RootWithNestedCounterProps, RootWithNestedCounterFromPropsState, CheckableTypes & PrimitiveTypes> {
             constructor(props: RootWithNestedCounterProps) {
-                super(props, typesystem.verifyF('RootWithNestedCounterProps'), typesystem.verifyF('RootWithNestedCounterFromPropsState'), typesystem.assertPartialF('RootWithNestedCounterFromPropsState'));
+                super(props, typesystem, 'RootWithNestedCounterProps', 'RootWithNestedCounterFromPropsState');
             }
             protected getInitialState(): Readonly<RootWithNestedCounterFromPropsState> { return { counter: null, stateCounter: null }; }
             render() {
@@ -293,17 +292,17 @@ interface CounterState {
 interface CounterFromProps extends BaseProps {
     currentCountProp: number;
 }
-class CounterComponent extends BaseComponent<CounterProps, CounterState> {
+class CounterComponent extends BaseComponent<CounterProps, CounterState, CheckableTypes & PrimitiveTypes> {
     constructor(props: CounterProps) {
-        super(props, typesystem.verifyF('CounterProps'), typesystem.verifyF('CounterState'), typesystem.assertPartialF('CounterState'));
+        super(props, typesystem, 'CounterProps', 'CounterState');
     }
     public get stateInfo() { return { currentCount: false as false }; }
     protected getInitialState(): Readonly<CounterState> { return { currentCount: 0 }; }
     render() { return <div></div>; }
 }
-class CounterFromPropsComponent extends BaseComponent<CounterFromProps, CounterState> {
+class CounterFromPropsComponent extends BaseComponent<CounterFromProps, CounterState, CheckableTypes & PrimitiveTypes> {
     constructor(props: CounterFromProps) {
-        super(props, typesystem.verifyF('CounterFromProps'), typesystem.verifyF('CounterState'), typesystem.assertPartialF('CounterState'));
+        super(props, typesystem, 'CounterFromProps', 'CounterState');
     }
     public get stateInfo() { return { currentCountProp: true as true, currentCount: false as false }; }
     protected getInitialState(props: Readonly<CounterFromProps>): Readonly<CounterState> {

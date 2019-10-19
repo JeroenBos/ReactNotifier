@@ -1,9 +1,8 @@
 import * as React from 'react';
 import { BaseState, BaseProps } from '../../base.interfaces';
-import { SimpleStateInfo, BaseComponent, StateInfoLocalHelper } from '../../base.component';
-import { typesystem } from './2.typesystem';
-import { IsNever } from 'jbsnorro-typesafety/typeHelper';
-import { IsExact } from 'jbsnorro-typesafety';
+import { BaseComponent, StateInfoLocalHelper } from '../../base.component';
+import { typesystem, CheckableTypes1 } from './2.typesystem';
+import { PrimitiveTypes } from 'jbsnorro-typesafety';
 
 export interface MainWindowProps extends BaseProps {
 }
@@ -11,10 +10,10 @@ export interface MainWindowState extends BaseState {
     rootEquation: string;
 }
 
-export class MainWindowComponent extends BaseComponent<MainWindowProps, MainWindowState> {
+export class MainWindowComponent extends BaseComponent<MainWindowProps, MainWindowState, CheckableTypes1 & PrimitiveTypes> {
 
     constructor(props: MainWindowProps) {
-        super(props, typesystem.verifyF('MainWindowProps'), typesystem.verifyF('MainWindowState'), typesystem.assertPartialF('MainWindowState'));
+        super(props, typesystem, 'MainWindowProps','MainWindowState');
     }
 
     protected getInitialState() {
