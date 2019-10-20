@@ -19,9 +19,8 @@ describe('commandmanager', () => {
 
     it(`'command 'c' arrived correctly`, async () => {
         const commandManager = container.commandManager;
-        debugger;
         await executeNextCommand();
         if (commandManager.commands.c === undefined) throw new Error();
-        if (commandManager.commands[0].name === undefined) throw new Error();
+        if (commandManager.commands.c.name === undefined) throw new Error();
     });
 });
