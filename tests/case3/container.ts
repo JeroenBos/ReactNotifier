@@ -14,7 +14,5 @@ export default function (responses: ITestResponse[]): void {
     container.bindResettableProvider(identifiers.http, mockHttpProvider);
     container.rebind(identifiers.typesystem).toConstantValue(typesystem);
     container.rebind(identifiers.responses).toConstantValue(responses);
-    // container.bindResettableProvider(identifiers.documentMeasurer, AbstractProvider.create(() => new MockDocumentMeasurer()));
-    // container.bindResettableProvider(identifiers.focusManager, AbstractProvider.create(() => new MockFocusManager()));
     container.assertIsFullyBound();
 }
