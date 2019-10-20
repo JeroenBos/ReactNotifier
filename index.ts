@@ -9,6 +9,7 @@ export { ChangesPropagator, IResponse } from "./changesPropagator/ChangesPropaga
 export { AbstractCommandManager, CommandManagerProps, CommandManagerState } from './commands/abstractCommandManager';
 export { CommandInstruction } from './commands/commandInstruction';
 export { CommandViewModel } from './commands/commands';
+export { commandsTypeDescription } from './commands/commands.typesystem';
 export { PromiseFactory } from './core';
 export { defaultTempIdProviderProvider, mockHttpProvider, defaultServerProvider, defaultCommandManagerProvider, ITestResponse, MockCommandInstruction, ITestChange } from './IoC/defaults';
 export { identifiers, TServices } from './IoC/keys';
