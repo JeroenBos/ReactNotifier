@@ -10,7 +10,7 @@ const commandId = 6;
 
 describe('commandmanager', () => {
     before(() => {
-        container.rebind(identifiers.responses).toConstantValue([[
+        initializePredefinedResponsesContainer([[
             { propertyName: 'commands', id: commandManagerId, value: { __id: commandsId } },
             { propertyName: 'c', id: commandsId, value: { __id: commandId } },
             { propertyName: 'name', id: commandId, value: 'c' }
