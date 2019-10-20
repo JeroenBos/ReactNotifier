@@ -10,7 +10,7 @@ import { ReactWrapper } from '../enzyme.wrapper';
 import { MockCommandInstruction } from '../../IoC/defaults';
 import { assert } from 'jbsnorro';
 
-const rootId = 0;
+export const rootId = 0;
 
 
 describe('ChangesPropagator', () => {
@@ -321,7 +321,7 @@ export function mountAndExtract<C extends Component, P_Child = never, S_Child = 
     const wrapper = mount<C, P, S>(node, options);
     return extract<C, P_Child, S_Child, P, S>(wrapper);
 }
-async function executeNextCommand(n: number = 1): Promise<void> {
+export async function executeNextCommand(n: number = 1): Promise<void> {
     for (let i = 0; i < n; i++) {
         await container.server.executeCommand(MockCommandInstruction);
     }
