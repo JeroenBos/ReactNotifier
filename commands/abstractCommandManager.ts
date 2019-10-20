@@ -11,7 +11,9 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     isComponent(_propertyName: string | number): boolean {
         return false;
     }
-    public readonly stateInfo: SimpleStateInfo<Omit<CommandManagerProps, 'server'>> = {};
+    public readonly stateInfo: SimpleStateInfo<CommandManagerProps> = {
+        'server': false
+    };
     // public readonly stateInfo: SimpleStateInfo<AppState> = {
     // a list of properties of AppState that represents props. Of each such property K, we have a props type P and state type S
     // An entry should exist with name K and return true whenever a keyof P is specified
@@ -282,7 +284,4 @@ export interface CommandManagerState extends BaseState {
     inputBindings: Map<CanonicalInputBinding, CommandBindingWithCommandName[]>;
 }
 
-
-export interface CommandsMap {
-    [s: string]: CommandViewModel;
-}
+export type CommandsMap = Record<string, CommandViewModel>;
