@@ -1,13 +1,11 @@
 import 'mocha';
 import initializePredefinedResponsesContainer from './container';
-import { rootId, executeNextCommand } from './changepropagator.spec';
-import { AbstractCommandManager } from '../../commands/abstractCommandManager';
+import { executeNextCommand } from './changepropagator.spec';
 import container from '../../IoC/container';
-import { typesystem } from '../case2/2.typesystem';
 
-const commandManagerId = 0;
-const commandsId = 1;
-const commandId = 2;
+const commandManagerId = 1;
+const commandsId = 5;
+const commandId = 6;
 
 describe('commandmanager', () => {
     before(() => {
@@ -23,7 +21,7 @@ describe('commandmanager', () => {
         const commandManager = container.commandManager;
         debugger;
         await executeNextCommand();
-        if (commandManager.commands.c !== undefined) throw new Error();
+        if (commandManager.commands.c === undefined) throw new Error();
         if (commandManager.commands[0].name === undefined) throw new Error();
     });
 });
