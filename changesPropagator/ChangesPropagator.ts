@@ -677,7 +677,7 @@ export class ChangesPropagator implements IChangePropagator {
 
             let currentResult: any = result;
             let currentOldState: any = prevState;
-            const path = this.getPathFrom(componentId, change.id);
+            const path = this.getPathFrom(componentId, change.id).reverse();
             for (const pathElement of path) {
                 const propertyName = pathElement.propertyName;
                 if (currentOldState !== undefined && currentOldState !== null) {
