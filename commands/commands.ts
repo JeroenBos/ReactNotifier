@@ -13,7 +13,7 @@ export interface CommandOptimization {
 
 export interface CommandViewModel extends BaseState {
     name: string;
-    condition: string | undefined;
+    condition?: string | undefined;
 }
 
 
