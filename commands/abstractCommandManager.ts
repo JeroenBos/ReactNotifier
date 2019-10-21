@@ -24,16 +24,17 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         this.verifyProps(props);
 
-        this._state = this._defaultState;
+        this._state = this.getInitialState(props);
         this._state = this.server.register(this) as Readonly<CommandManagerState>;
         verifyState(this._state);
     }
+
     /** The purpose of this property is to allow the ctor to access the abstract property 'defaultState'. */
-    private get _defaultState(): Readonly<CommandManagerState> {
+    private getInitialState(_props: CommandManagerProps): Readonly<CommandManagerState> {
         return {
             flags: new Map<string, boolean>(),
             inputBindings: new Map<CanonicalInputBinding, CommandBindingWithCommandName[]>(),
-            commands: {}
+            commands: {},
         };
     }
     public get flags() {
