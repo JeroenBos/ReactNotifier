@@ -81,20 +81,19 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         this.commands[commandName].propagation = propagation;
     }
-    public bind(commandName: string, inputBinding: string, condition: string = "") {
+    public bind(commandName: string, inputBinding: CanonicalInputBinding, condition: string = "") {
         const commandBinding = this.commands[commandName];
         if (commandBinding === undefined) {
             throw new Error(`The command '${name}' is not registered at the command manager`);
         }
 
-        const canonicalInput = CanonicalInputBinding.parse(inputBinding);
         const conditionAST = ConditionAST.parse(condition, this.flags);
 
-        const hasExistingBindingForThisInput = canonicalInput in this.inputBindings;
+        const hasExistingBindingForThisInput = inputBinding in this.inputBindings;
         if (!hasExistingBindingForThisInput) {
-            this.inputBindings[canonicalInput] = [];
+            this.inputBindings[inputBinding] = [];
         }
-        this.inputBindings[canonicalInput].push(new CommandBindingWithCommandName(commandName, conditionAST, canonicalInput));
+        this.inputBindings[inputBinding].push(new CommandBindingWithCommandName(commandName, conditionAST, inputBinding));
 
     }
     public hasCommand(name: string): boolean {
