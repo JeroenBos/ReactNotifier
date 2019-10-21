@@ -7,7 +7,7 @@ export interface Booleanable {
      * @param sender
      * @param e If the input event is missing, it was triggered by code.
      */
-    toBoolean(sender: BaseProps, e?: InputEvent): boolean;
+    toBoolean(sender: any, e?: InputEvent): boolean;
 }
 
 export abstract class ConditionAST implements Booleanable {

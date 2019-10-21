@@ -15,7 +15,7 @@ export interface CommandViewModel extends BaseState {
     name: string;
     condition?: string | undefined;
     optimization?: CommandOptimization;
-    eventToCommandPropagation?: EventToCommandPropagation;
+    propagation?: EventToCommandPropagation;
 }
 
 

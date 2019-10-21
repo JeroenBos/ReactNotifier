@@ -53,25 +53,25 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return this.props.server;
     }
 
-    private readonly commandOptimizations = new Map<string, CommandOptimization>();
-    private readonly commandEventPropagations = new Map<string, EventToCommandPropagation>();
-
-    public optimizeCommandClientside(commandName: string, command: CommandOptimization) {
+    public addCommandOptimization(commandName: string, command: CommandOptimization) {
         if (commandName == null || commandName == '') {
             throw new Error('Invalid command name specified');
         }
 
-        this.commandOptimizations.set(commandName, command);
+        if (!this.hasCommand(commandName)) {
+            this.commands[commandName] = { name: commandName };
+        }
+        this.commands[commandName].optimization = command;
     }
     public setEventArgPropagation(commandName: string, propagation: EventToCommandPropagation) {
         if (commandName == null || commandName == '') {
             throw new Error('Invalid command name specified');
         }
         if (!this.hasCommand(commandName)) {
-            throw new Error(`No command with the name '${commandName}' exists`);
+            this.commands[commandName] = { name: commandName };
         }
 
-        this.commandEventPropagations.set(commandName, propagation);
+        this.commands[commandName].propagation = propagation;
     }
     public bind(commandName: string, inputBinding: string, condition: string = "") {
         const commandBinding = this.commands[commandName];
@@ -90,8 +90,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
     }
     public hasCommand(name: string): boolean {
-        return this.commands[name] !== undefined
-            && !this.commandOptimizations.has(name); // if this is true, then only a clientside command exists.
+        return name in this.commands;
     }
 
     /**
@@ -151,7 +150,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     /**
      * Gets the names of the commands bound to the specified input, for which the binding condition is true.
      */
-    private getCommandBindingsFor(inputBinding: CanonicalInputBinding, sender: Readonly<BaseProps>, e: InputEvent): string[] {
+    private getCommandBindingsFor(inputBinding: CanonicalInputBinding, sender: Readonly<any>, e: InputEvent): string[] {
         const commandBindings = this.inputBindings.get(inputBinding);
         if (commandBindings === undefined) {
             return [];
@@ -168,16 +167,22 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return commandNames;
     }
 
-    private executeCommandIfPossible(commandName: string, sender: IComponent, e?: InputEvent): boolean {
+    private executeCommandIfPossible(commandName: string, sender: Readonly<any>, e?: InputEvent): boolean {
+        if (!this.hasCommand(commandName)) {
+            console.warn(`The command '${commandName}' does not exist`);
+            return false;
+        }
 
-        const args = this.getEventArgs(commandName, sender.state, e);
-        const serverSideExecuted = this.executeServersideCommandIfPossible(commandName, sender.props, args, e);
-        const clientSideExecuted = this.executeClientsideCommandIfPossible(commandName, sender, args);
+        const command = this.commands[commandName];
+        const args = this.getEventArgs(command, sender.state, e);
+        const serverSideExecuted = this.executeServersideCommandIfPossible(command, sender.props, args, e);
+        const clientSideExecuted = this.executeClientsideCommandIfPossible(command, sender, args);
 
         return serverSideExecuted || clientSideExecuted;
     }
-    private getEventArgs(commandName: string, sender: BaseState, e?: InputEvent): any {
-        const propagation = this.commandEventPropagations.get(commandName);
+
+    private getEventArgs(command: CommandViewModel, sender: Readonly<any>, e?: InputEvent): any {
+        const propagation = command.propagation;
         if (propagation === undefined) {
             return undefined;
         }
@@ -189,40 +194,26 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
             return propagation(e);
         }
     }
-    private executeServersideCommandIfPossible(commandName: string, sender: Readonly<BaseProps>, args: CommandArgs, e: InputEvent | undefined): boolean {
 
-        const command = this.commands[commandName];
-        if (command === undefined) {
-            if (this.commandOptimizations.get(commandName) === undefined) {
-                console.warn(`The command '${commandName}' does not exist`);
-            }
-            return false;
-        }
-
+    private executeServersideCommandIfPossible(command: CommandViewModel, sender: Readonly<BaseProps>, args: CommandArgs, e: InputEvent | undefined): boolean {
         if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, e)) {
             return false;
         }
 
-        this.server.executeCommand(new CommandInstruction(commandName, sender, args));
+        this.server.executeCommand(new CommandInstruction(command.name, sender, args));
         return true;
     }
-    private executeClientsideCommandIfPossible(commandName: string, sender: IComponent, args: CommandArgs): boolean {
-        const command = this.commandOptimizations.get(commandName);
-        if (command === undefined) {
+    private executeClientsideCommandIfPossible(command: CommandViewModel, sender: Readonly<any>, args: CommandArgs): boolean {
+        const optimization = command.optimization;
+        if (optimization === undefined) {
             return false;
         }
 
-        if (!command.canExecute(sender.state, args)) {
+        if (!optimization.canExecute(sender.state, args)) {
             return false;
         }
-        sender.setState((prev, props) => {
-            if (!command.canExecute(prev, args)) // can be true due to async nature of React 
-            {
-                console.warn(`The command '${commandName}' ultimately was not able to execute due to asynchronicity.`);
-                return prev;
-            }
-            return command.execute(prev, args)
-        });
+
+        optimization.execute(sender, args);
         return true;
     }
 
@@ -236,7 +227,6 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         Object.assign(this._state, newPartialState); // Should this be deep assignment? What does react do?
         // in case React does shallow assignment (my expectation, but dunno), then update-call should return the entire subproperty when a subusbsubproperty is modified
     }
-
     assertIsValidState(item: any, requireAllKeys: boolean): void {
         if (requireAllKeys) {
             this.verifyState(item);
