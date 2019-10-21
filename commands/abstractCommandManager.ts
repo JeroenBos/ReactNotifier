@@ -8,33 +8,6 @@ import { InputEvent, CommandArgs } from './inputTypes';
 import { SimpleStateInfo } from '../base.component';
 
 export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerState> {
-    isComponent(_propertyName: string | number): boolean {
-        return false;
-    }
-    public readonly stateInfo: SimpleStateInfo<CommandManagerProps> = {
-        'server': false
-    };
-    // public readonly stateInfo: SimpleStateInfo<AppState> = {
-    // a list of properties of AppState that represents props. Of each such property K, we have a props type P and state type S
-    // An entry should exist with name K and return true whenever a keyof P is specified
-    // 
-    // instructions:
-    // for all properties/keys K in AppState that represents props P<K> = AppState[K]
-    // add a function that returns true whenever an argument is specified that is a key of P<K>
-    //
-    // implementation:
-    // all properties of AppState are: 'counter', 'app'
-    // 'app' represents props
-    // the keys of P = AppState['app'] are: '__id', 'rootEquation'.
-    // Suppose that 'rootEquation' was part of MainWindowState instead of MainWindowProps, then P would have only contained '__id'
-    // in this case (which we're doing for now), true should be returned only for '__id'
-    //     
-    // example implementation 2:
-    // all properties of CommandManagerState are: flags, commands, inputBindings
-    // out of these, none represent props, we we have {}, which they'll be set through CommandManager.setState(...)
-    // };
-    private static counter = 0;
-    public readonly _uid = AbstractCommandManager.counter++;
     private _state: CommandManagerState;
     public get state(): CommandManagerState {
         return this._state;
@@ -270,6 +243,12 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
             this.verifyPartialState(item);
         }
     }
+    isComponent(_propertyName: string | number): boolean {
+        return false;
+    }
+    public readonly stateInfo: SimpleStateInfo<CommandManagerProps> = {
+        'server': false
+    };
 }
 
 
