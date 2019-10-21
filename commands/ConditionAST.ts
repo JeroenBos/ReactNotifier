@@ -11,7 +11,7 @@ export interface Booleanable {
 }
 
 export abstract class ConditionAST implements Booleanable {
-    public static parse(s: string, flags: ReadonlyMap<string, boolean>): Booleanable {
+    public static parse(s: string, flags: Readonly<Record<string, boolean>>): Booleanable {
         s = s.trim();
         //if (s.filter(c => c == "(").length != s.filter(c => c == ")").length) {
         //    throw new Error("Received different number of opening parentheses from closing ones");
@@ -38,8 +38,8 @@ export abstract class ConditionAST implements Booleanable {
             return new Not(<ConditionAST>ConditionAST.parse(s.substr(1), flags));
         }
 
-        if (flags.has(s))
-            return new Flag(s, flags.get);
+        if (s in flags)
+            return new Flag(s, s => flags[s]);
 
         throw new Error(`Could not parse '${s}'`);
     }

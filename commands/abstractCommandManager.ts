@@ -33,8 +33,8 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     /** The purpose of this property is to allow the ctor to access the abstract property 'defaultState'. */
     private getInitialState(_props: CommandManagerProps): Readonly<CommandManagerState> {
         return {
-            flags: new Map<string, boolean>(),
-            inputBindings: new Map<CanonicalInputBinding, CommandBindingWithCommandName[]>(),
+            flags: {},
+            inputBindings: {},
             commands: {},
         };
     }
@@ -83,11 +83,11 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         const canonicalInput = CanonicalInputBinding.parse(inputBinding);
         const conditionAST = ConditionAST.parse(condition, this.flags);
 
-        const hasExistingBindingForThisInput = this.inputBindings.has(canonicalInput);
+        const hasExistingBindingForThisInput = canonicalInput in this.inputBindings;
         if (!hasExistingBindingForThisInput) {
-            this.inputBindings.set(canonicalInput, []);
+            this.inputBindings[canonicalInput] = [];
         }
-        this.inputBindings.get(canonicalInput)!.push(new CommandBindingWithCommandName(commandName, conditionAST, canonicalInput));
+        this.inputBindings[canonicalInput].push(new CommandBindingWithCommandName(commandName, conditionAST, canonicalInput));
 
     }
     public hasCommand(name: string): boolean {
@@ -101,10 +101,10 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
        * @param e Optional event args, which is consumed if specified (i.e. propagation is stopped).
        */
     public executeCommandByName(commandName: string, sender: Sender, e?: InputEvent): void {
-        if(sender.id === undefined && this.commands[commandName] !== undefined && this.commands[commandName].optimization === undefined) {
+        if (sender.id === undefined && this.commands[commandName] !== undefined && this.commands[commandName].optimization === undefined) {
             throw new Error('Cannot send a command to the server without a sender.id');
         }
-        
+
         const executed = this.executeCommandIfPossible(commandName, sender, e);
         if (!executed && this.hasCommand(commandName)) {
             console.warn(`The command '${commandName}' cannot execute on '${Object.getPrototypeOf(sender).constructor.name}'(id=${sender.id})`);
@@ -156,14 +156,12 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
      * Gets the names of the commands bound to the specified input, for which the binding condition is true.
      */
     private getCommandBindingsFor(inputBinding: CanonicalInputBinding, sender: Readonly<any>, e: InputEvent): string[] {
-        const commandBindings = this.inputBindings.get(inputBinding);
-        if (commandBindings === undefined) {
+        if (!(inputBinding in this.inputBindings))
             return [];
-        }
 
         const commandNames: string[] = [];
 
-        commandBindings.forEach((binding: CommandBindingWithCommandName) => {
+        this.inputBindings[inputBinding].forEach((binding: CommandBindingWithCommandName) => {
             if (binding.condition.toBoolean(sender, e)) {
                 commandNames.push(binding.commandName);
             }
@@ -207,7 +205,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         if (sender.id === undefined)
             throw new Error('Cannot send a command to the server without a sender.id');
-            
+
         this.server.executeCommand(new CommandInstruction(command.name, sender.id, args));
         return true;
     }
@@ -257,9 +255,9 @@ export interface CommandManagerProps extends BaseProps {
 }
 
 export interface CommandManagerState extends BaseState {
-    flags: Map<string, boolean>;
+    flags: Record<string, boolean>;
     commands: CommandsMap;
-    inputBindings: Map<CanonicalInputBinding, CommandBindingWithCommandName[]>;
+    inputBindings: Record<CanonicalInputBinding, CommandBindingWithCommandName[]>;
 }
 
 export type CommandsMap = Record<string, CommandViewModel>;
