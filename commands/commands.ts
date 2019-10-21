@@ -3,12 +3,12 @@ import { CommandInstruction } from './commandInstruction';
 import { CanonicalInputBinding } from './inputBindingParser';
 import { Booleanable, ConditionAST } from './ConditionAST'
 import { InputEvent, CommandArgs } from './inputTypes';
-import { BaseState } from '../base.interfaces';
+import { BaseState, Sender } from '../base.interfaces';
 
 export interface CommandOptimization {
-    canExecute(sender: BaseState, e: CommandArgs): OptimizationCanExecute;
+    canExecute(sender: Sender, e: CommandArgs): OptimizationCanExecute;
     /** Returns the new state with the effect of this command. */
-    execute(sender: BaseState, e: CommandArgs): BaseState;
+    execute(sender: Sender, e: CommandArgs): BaseState;
 }
 
 export interface CommandViewModel extends BaseState {

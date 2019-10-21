@@ -40,16 +40,17 @@ export namespace IComponent {
 export const UNINITIALIZED_ID = -1;
 export const AppId = 0;
 export const CommandManagerId = 1;
+export type Sender = Readonly<{ id: number }>;
 
 export interface ICommandManager extends IComponent<CommandManagerState> {
-    handleMouseMove(sender: IComponent, e: React.MouseEvent): void;
-    handleMouseClick(sender: IComponent, e: React.MouseEvent): void;
-    handleMouseDown(sender: IComponent, e: React.MouseEvent): void;
-    handleMouseUp(sender: IComponent, e: React.MouseEvent): void;
-    handleKeyPress(sender: IComponent, e: React.KeyboardEvent): void;
-    handleKeyUp(sender: IComponent, e: React.KeyboardEvent): void
+    handleMouseMove(sender: Sender, e: React.MouseEvent): void;
+    handleMouseClick(sender: Sender, e: React.MouseEvent): void;
+    handleMouseDown(sender: Sender, e: React.MouseEvent): void;
+    handleMouseUp(sender: Sender, e: React.MouseEvent): void;
+    handleKeyPress(sender: Sender, e: React.KeyboardEvent): void;
+    handleKeyUp(sender: Sender, e: React.KeyboardEvent): void
 
-    executeCommandByName(commandName: string, sender: IComponent, e?: InputEvent): void;
+    executeCommandByName(commandName: string, sender: Sender, e?: InputEvent): void;
 }
 export interface IChangePropagator {
     open(initialization: Promise<any>): void;

@@ -1,11 +1,12 @@
 ﻿import 'rxjs/add/operator/toPromise';
-import { BaseState, ICommandManager, BaseProps, CommandManagerId, IComponent, IChangePropagator } from '../base.interfaces';
+import { BaseState, ICommandManager, BaseProps, CommandManagerId, IComponent, IChangePropagator, Sender } from '../base.interfaces';
 import { CommandInstruction } from './commandInstruction';
 import { CommandBindingWithCommandName, CommandOptimization, EventToCommandPropagation, DefaultEventArgPropagations, CommandViewModel } from './commands';
 import { ConditionAST } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
 import { InputEvent, CommandArgs } from './inputTypes';
 import { SimpleStateInfo } from '../base.component';
+
 
 export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerState> {
     private _state: CommandManagerState;
@@ -99,41 +100,41 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
        * @param commandName
        * @param e Optional event args, which is consumed if specified (i.e. propagation is stopped).
        */
-    public executeCommandByName(commandName: string, sender: IComponent, e?: InputEvent): void {
+    public executeCommandByName(commandName: string, sender: Sender, e?: InputEvent): void {
         const executed = this.executeCommandIfPossible(commandName, sender, e);
         if (!executed && this.hasCommand(commandName)) {
-            console.warn(`The command '${commandName}' cannot execute on '${Object.getPrototypeOf(sender).constructor.name}'(id=${sender.__id})`);
+            console.warn(`The command '${commandName}' cannot execute on '${Object.getPrototypeOf(sender).constructor.name}'(id=${sender.id})`);
         }
     }
-    public handleMouseMove(sender: IComponent, e: React.MouseEvent): void {
+    public handleMouseMove(sender: Sender, e: React.MouseEvent): void {
 
         this.handle(CanonicalInputBinding.fromMouseMoveEvent(e), sender, e);
     }
-    public handleMouseClick(sender: IComponent, e: React.MouseEvent): void {
+    public handleMouseClick(sender: Sender, e: React.MouseEvent): void {
         // in javascript a mouse click is a left mouse button down and up event together, triggered at the moment of up event
         // for simplicity I simply trigger another kind of event, but I think the canonical input 'click' could be inferred from up and down events
         this.handle(CanonicalInputBinding.fromMouseEvent(e, Kind.Click), sender, e);
     }
-    public handleMouseDown(sender: IComponent, e: React.MouseEvent): void {
+    public handleMouseDown(sender: Sender, e: React.MouseEvent): void {
         this.handle(CanonicalInputBinding.fromMouseEvent(e, Kind.Down), sender, e);
     }
-    public handleMouseUp(sender: IComponent, e: React.MouseEvent): void {
+    public handleMouseUp(sender: Sender, e: React.MouseEvent): void {
         this.handle(CanonicalInputBinding.fromMouseEvent(e, Kind.Up), sender, e);
     }
-    public handleKeyPress(sender: IComponent, e: React.KeyboardEvent): void {
+    public handleKeyPress(sender: Sender, e: React.KeyboardEvent): void {
         this.handle(CanonicalInputBinding.fromKeyboardEvent(e, Kind.Down), sender, e);
     }
-    public handleKeyUp(sender: IComponent, e: React.KeyboardEvent): void {
+    public handleKeyUp(sender: Sender, e: React.KeyboardEvent): void {
         this.handle(CanonicalInputBinding.fromKeyboardEvent(e, Kind.Up), sender, e);
     }
 
 
     private handle(
         inputBinding: CanonicalInputBinding,
-        sender: IComponent,
+        sender: Sender,
         e: InputEvent): void {
 
-        const commandNames = this.getCommandBindingsFor(inputBinding, sender.props, e);
+        const commandNames = this.getCommandBindingsFor(inputBinding, sender, e);
 
         for (let i = 0; i < commandNames.length; i++) {
 
@@ -167,15 +168,15 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return commandNames;
     }
 
-    private executeCommandIfPossible(commandName: string, sender: Readonly<any>, e?: InputEvent): boolean {
+    private executeCommandIfPossible(commandName: string, sender: Sender, e?: InputEvent): boolean {
         if (!this.hasCommand(commandName)) {
             console.warn(`The command '${commandName}' does not exist`);
             return false;
         }
 
         const command = this.commands[commandName];
-        const args = this.getEventArgs(command, sender.state, e);
-        const serverSideExecuted = this.executeServersideCommandIfPossible(command, sender.props, args, e);
+        const args = this.getEventArgs(command, sender, e);
+        const serverSideExecuted = this.executeServersideCommandIfPossible(command, sender, args, e);
         const clientSideExecuted = this.executeClientsideCommandIfPossible(command, sender, args);
 
         return serverSideExecuted || clientSideExecuted;
@@ -195,12 +196,12 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         }
     }
 
-    private executeServersideCommandIfPossible(command: CommandViewModel, sender: Readonly<BaseProps>, args: CommandArgs, e: InputEvent | undefined): boolean {
+    private executeServersideCommandIfPossible(command: CommandViewModel, sender: Sender, args: CommandArgs, e: InputEvent | undefined): boolean {
         if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, e)) {
             return false;
         }
 
-        this.server.executeCommand(new CommandInstruction(command.name, sender.__id, args));
+        this.server.executeCommand(new CommandInstruction(command.name, sender.id, args));
         return true;
     }
     private executeClientsideCommandIfPossible(command: CommandViewModel, sender: Readonly<any>, args: CommandArgs): boolean {

@@ -1,4 +1,4 @@
-﻿import { BaseProps } from "../base.interfaces";
+﻿import { Sender } from "../base.interfaces";
 import { InputEvent, CommandArgs } from '../commands/inputTypes';
 
 export interface Booleanable {
@@ -7,7 +7,7 @@ export interface Booleanable {
      * @param sender
      * @param e If the input event is missing, it was triggered by code.
      */
-    toBoolean(sender: any, e?: InputEvent): boolean;
+    toBoolean(sender: Sender, e?: InputEvent): boolean;
 }
 
 export abstract class ConditionAST implements Booleanable {
@@ -43,7 +43,7 @@ export abstract class ConditionAST implements Booleanable {
 
         throw new Error(`Could not parse '${s}'`);
     }
-    abstract toBoolean(sender: BaseProps, e: CommandArgs): boolean;
+    abstract toBoolean(sender: Sender, e: CommandArgs): boolean;
 }
 class And extends ConditionAST {
 
@@ -53,7 +53,7 @@ class And extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: BaseProps, e: CommandArgs): boolean {
+    toBoolean(sender: Sender, e: CommandArgs): boolean {
         return this.lhs.toBoolean(sender, e) && this.rhs.toBoolean(sender, e);
     }
 }
@@ -64,7 +64,7 @@ class Or extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: BaseProps, e: CommandArgs): boolean {
+    toBoolean(sender: Sender, e: CommandArgs): boolean {
         return this.lhs.toBoolean(sender, e) && this.rhs.toBoolean(sender, e);
     }
 }
@@ -74,7 +74,7 @@ class Not extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: BaseProps, e: CommandArgs): boolean {
+    toBoolean(sender: Sender, e: CommandArgs): boolean {
         return !this.operand.toBoolean(sender, e);
     }
 }
@@ -84,7 +84,7 @@ class Flag extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: BaseProps, e: CommandArgs): boolean {
+    toBoolean(sender: Sender, e: CommandArgs): boolean {
         const result = this.getFlag(this.conditionName);
         if (result === undefined) {
             throw new Error(`Flag '${this.conditionName}' was not found`);
