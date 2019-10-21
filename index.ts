@@ -15,4 +15,4 @@ export { defaultTempIdProviderProvider, mockHttpProvider, defaultServerProvider,
 export { identifiers, TServices } from './IoC/keys';
 export { TempIdProvider } from './tempIdProvider';
 
-export { ReactWrapper, wraps } from './tests/enzyme.wrapper';
+export { ReactWrapper, wraps } from './enzyme.wrapper';

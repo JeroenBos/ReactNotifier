@@ -6,7 +6,7 @@ import container from '../../IoC/container';
 import { SimpleStateInfo, BaseComponent, TInfo } from '../../base.component';
 import { BaseProps, BaseState } from '../../base.interfaces';
 import initializePredefinedResponsesContainer from './container';
-import { ReactWrapper } from '../enzyme.wrapper';
+import { ReactWrapper } from '../../enzyme.wrapper';
 import { MockCommandInstruction } from '../../IoC/defaults';
 import { assert } from 'jbsnorro';
 
