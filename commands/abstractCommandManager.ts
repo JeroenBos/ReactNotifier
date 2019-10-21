@@ -6,6 +6,7 @@ import { ConditionAST } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
 import { InputEvent, CommandArgs } from './inputTypes';
 import { SimpleStateInfo } from '../base.component';
+import { BindingScopeEnum } from 'inversify';
 
 
 export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerState> {
@@ -163,7 +164,8 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         const commandNames: string[] = [];
 
         this.inputBindings[inputBinding].forEach((binding: CommandBindingWithCommandName) => {
-            if (binding.condition.toBoolean(sender, e)) {
+            const args = binding.commandName in this.commands ? this.getEventArgs(this.commands[binding.commandName], sender, e) : undefined;
+            if (binding.condition.toBoolean(sender, args)) {
                 commandNames.push(binding.commandName);
             }
         });
@@ -185,7 +187,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return serverSideExecuted || clientSideExecuted;
     }
 
-    private getEventArgs(command: CommandViewModel, sender: Sender, e?: InputEvent): any {
+    private getEventArgs(command: CommandViewModel, sender: Sender, e?: InputEvent): CommandArgs {
         const propagation = command.propagation;
         if (propagation === undefined) {
             return undefined;
