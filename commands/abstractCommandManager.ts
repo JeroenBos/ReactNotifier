@@ -55,7 +55,13 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return this.props.server;
     }
 
-    public addCommandOptimization(commandName: string, command: CommandOptimization) {
+    public add(viewModel: CommandViewModel): void {
+        if (viewModel.name in this.commands)
+            throw new Error(`The specified command view model with name '${viewModel.name}' already exists`);
+
+        this.commands[viewModel.name] = viewModel;
+    }
+    public addCommandOptimization(commandName: string, command: CommandOptimization): void {
         if (commandName == null || commandName == '') {
             throw new Error('Invalid command name specified');
         }
