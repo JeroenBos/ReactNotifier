@@ -200,7 +200,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
             return false;
         }
 
-        this.server.executeCommand(new CommandInstruction(command.name, sender, args));
+        this.server.executeCommand(new CommandInstruction(command.name, sender.__id, args));
         return true;
     }
     private executeClientsideCommandIfPossible(command: CommandViewModel, sender: Readonly<any>, args: CommandArgs): boolean {
