@@ -101,13 +101,14 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
        * @param e Optional event args, which is consumed if specified (i.e. propagation is stopped).
        */
     public executeCommandByName(commandName: string, sender: Sender, e?: InputEvent): void {
-        if (sender.__id === undefined && this.commands[commandName] !== undefined && this.commands[commandName].optimization === undefined) {
+        const s = sender as { __id?: number };
+        if (s.__id === undefined && this.commands[commandName] !== undefined && this.commands[commandName].optimization === undefined) {
             throw new Error('Cannot send a command to the server without a sender.id');
         }
 
-        const executed = this.executeCommandIfPossible(commandName, sender, e);
+        const executed = this.executeCommandIfPossible(commandName, s, e);
         if (!executed && this.hasCommand(commandName)) {
-            console.warn(`The command '${commandName}' cannot execute on '${Object.getPrototypeOf(sender).constructor.name}'(id=${sender.__id})`);
+            console.warn(`The command '${commandName}' cannot execute on '${Object.getPrototypeOf(s).constructor.name}'(id=${s.__id})`);
         }
     }
     public handleMouseMove(sender: Sender, e: React.MouseEvent): void {
@@ -178,7 +179,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         const command = this.commands[commandName];
         const args = this.getEventArgs(command, sender, e);
-        const serverSideExecuted = this.executeServersideCommandIfPossible(command, sender, args, e);
+        const serverSideExecuted = this.executeServersideCommandIfPossible(command, sender as any, args, e);
         const clientSideExecuted = this.executeClientsideCommandIfPossible(command, sender, args);
 
         return serverSideExecuted || clientSideExecuted;
@@ -198,7 +199,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         }
     }
 
-    private executeServersideCommandIfPossible(command: CommandViewModel, sender: Sender, args: CommandArgs, e: InputEvent | undefined): boolean {
+    private executeServersideCommandIfPossible(command: CommandViewModel, sender: { __id?: number }, args: CommandArgs, e: InputEvent | undefined): boolean {
         if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, e)) {
             return false;
         }
