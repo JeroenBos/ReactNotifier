@@ -111,15 +111,15 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
         if (stateTypeKey == undefined) throw new Error(`Argument 'stateTypeKey' is null or undefined`);
         if (!typesystem.hasDescription(propsTypeKey)) throw new Error(`Argument 'propsTypeKey':'${propsTypeKey}' is not a key in the specified type system`);
         if (!typesystem.hasDescription(stateTypeKey)) throw new Error(`Argument 'propsTypeKey':'${stateTypeKey}' is not a key in the specified type system`);
-        if (this._stateInfo === undefined) throw new Error('state info is missing. You need to override it as getter: field assignment is too late');
+        if (this.stateInfo === undefined) throw new Error(`'state info' is missing. You need to override it as getter: field assignment is too late'`);
+        if (this.getInitialState === undefined) throw new Error(`'getInitialState' is missing. You need to override it: assignment is too late`);
 
         const verifyProps = typesystem.assertF(propsTypeKey as any);
         this.verifyState = typesystem.assertF(stateTypeKey as any);
         this.verifyPartialState = typesystem.isPartialF(stateTypeKey as any);
 
-
         verifyProps(props);
-        this.state = this._defaultState;
+        this.state = this.getInitialState(props);
         if (this.state === undefined)
             console.warn('state was undefined. You need to override it as getter: field assignment is too late');
         this.state = this.server.register(this) as Readonly<S>; // server.register merges any changes with the default state
@@ -141,14 +141,6 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
         }
     }
 
-    /** The purpose of this property is to allow the ctor to access the abstract property 'defaultState'. */
-    private get _defaultState(): Readonly<S> {
-        return this.getInitialState(this.props);;
-    }
-    /** The purpose of this property is to allow the ctor to access the abstract property 'stateInfo'. */
-    private get _stateInfo(): SimpleStateInfo<TProps> {
-        return this.stateInfo;
-    }
     public isComponent(propertyName: string | number): boolean {
         // you should return false for all viewmodels (i.e. non-component) children
         return true;
