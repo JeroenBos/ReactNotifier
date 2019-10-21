@@ -1,14 +1,13 @@
 ﻿import 'rxjs/add/operator/toPromise';
-import { CommandInstruction } from './commandInstruction';
 import { CanonicalInputBinding } from './inputBindingParser';
-import { Booleanable, ConditionAST } from './ConditionAST'
+import { Booleanable } from './ConditionAST'
 import { InputEvent, CommandArgs } from './inputTypes';
 import { BaseState, Sender } from '../base.interfaces';
 
 export interface CommandOptimization {
-    canExecute(sender: Sender, e: CommandArgs): OptimizationCanExecute;
+    canExecute(sender: Sender, e: InputEvent | undefined): OptimizationCanExecute;
     /** Returns the new state with the effect of this command. */
-    execute(sender: Sender, e: CommandArgs): BaseState;
+    execute(sender: Sender, e: InputEvent | undefined): BaseState;
 }
 
 export interface CommandViewModel extends BaseState {

@@ -5,21 +5,14 @@ export interface Booleanable {
     /**
      * 
      * @param sender
-     * @param e If the input event is missing, it was triggered by code.
+     * @param args If missing, it was triggered by code.
      */
-    toBoolean(sender: Sender, e?: InputEvent): boolean;
+    toBoolean(sender: Sender, args?: CommandArgs): boolean;
 }
 
 export abstract class ConditionAST implements Booleanable {
     public static parse(s: string, flags: Readonly<Record<string, boolean>>): Booleanable {
         s = s.trim();
-        //if (s.filter(c => c == "(").length != s.filter(c => c == ")").length) {
-        //    throw new Error("Received different number of opening parentheses from closing ones");
-        //}
-
-        //if (s.indexOf(')') < s.indexOf('(')) {
-        //    throw new Error('too many closing parentheses');
-        //}
 
         const firstOrIndex = s.indexOf("||");
         const firstAndIndex = s.indexOf("&&");
