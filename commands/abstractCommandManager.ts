@@ -1,7 +1,7 @@
 ﻿import 'rxjs/add/operator/toPromise';
 import { BaseState, ICommandManager, BaseProps, CommandManagerId, IComponent, IChangePropagator, Sender } from '../base.interfaces';
 import { CommandInstruction } from './commandInstruction';
-import { CommandBindingWithCommandName, CommandOptimization, EventToCommandPropagation, DefaultEventArgPropagations, CommandViewModel } from './commands';
+import { CommandBindingWithCommandName, CommandOptimization, EventToCommandPropagation, DefaultEventArgPropagations, CommandViewModel, OptimizationCanExecute } from './commands';
 import { ConditionAST } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
 import { InputEvent, CommandArgs } from './inputTypes';
@@ -71,7 +71,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         }
         this.commands[commandName].optimization = command;
     }
-    public setEventArgPropagation(commandName: string, propagation: EventToCommandPropagation) {
+    public setEventArgPropagation(commandName: string, propagation: EventToCommandPropagation): void {
         if (commandName == null || commandName == '') {
             throw new Error('Invalid command name specified');
         }
@@ -187,10 +187,24 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         const command = this.commands[commandName];
         const args = this.getEventArgs(command, sender, e);
-        const serverSideExecuted = this.executeServersideCommandIfPossible(command, sender as any, args, e);
-        const clientSideExecuted = this.executeClientsideCommandIfPossible(command, sender, args);
+        if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, args)) {
+            return false;
+        }
 
-        return serverSideExecuted || clientSideExecuted;
+        const sides = command.optimization == undefined ? OptimizationCanExecute.ServersideOnly : command.optimization.canExecute(sender, e);
+
+        if ((sides & OptimizationCanExecute.ServersideOnly) != 0) {
+            if (!('__id' in sender))
+                throw new Error('Cannot send a command to the server without a sender.id');
+
+            this.server.executeCommand(new CommandInstruction(command.name, sender.__id, args));
+        }
+
+        if ((sides & OptimizationCanExecute.ClientsideOnly) != 0) {
+            command.optimization!.execute(sender, e);
+        }
+
+        return sides != 0;
     }
 
     private getEventArgs(command: CommandViewModel, sender: Sender, e?: InputEvent): CommandArgs {
@@ -207,30 +221,6 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         }
     }
 
-    private executeServersideCommandIfPossible(command: CommandViewModel, sender: { __id?: number }, args: CommandArgs, e: InputEvent | undefined): boolean {
-        if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, e)) {
-            return false;
-        }
-
-        if (sender.__id === undefined)
-            throw new Error('Cannot send a command to the server without a sender.id');
-
-        this.server.executeCommand(new CommandInstruction(command.name, sender.__id, args));
-        return true;
-    }
-    private executeClientsideCommandIfPossible(command: CommandViewModel, sender: Sender, args: CommandArgs): boolean {
-        const optimization = command.optimization;
-        if (optimization === undefined) {
-            return false;
-        }
-
-        if (!optimization.canExecute(sender, args)) {
-            return false;
-        }
-
-        optimization.execute(sender, args);
-        return true;
-    }
 
     // IComponent members
     setState(
