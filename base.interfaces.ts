@@ -40,7 +40,7 @@ export namespace IComponent {
 export const UNINITIALIZED_ID = -1;
 export const AppId = 0;
 export const CommandManagerId = 1;
-export type Sender = Readonly<{ id?: number }>;
+export type Sender = Readonly<{ __id?: number }>;
 
 export interface ICommandManager extends IComponent<CommandManagerState> {
     handleMouseMove(sender: Sender, e: React.MouseEvent): void;
