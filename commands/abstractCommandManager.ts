@@ -155,7 +155,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     /**
      * Gets the names of the commands bound to the specified input, for which the binding condition is true.
      */
-    private getCommandBindingsFor(inputBinding: CanonicalInputBinding, sender: Readonly<any>, e: InputEvent): string[] {
+    private getCommandBindingsFor(inputBinding: CanonicalInputBinding, sender: Sender, e: InputEvent): string[] {
         if (!(inputBinding in this.inputBindings))
             return [];
 
@@ -184,7 +184,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return serverSideExecuted || clientSideExecuted;
     }
 
-    private getEventArgs(command: CommandViewModel, sender: Readonly<any>, e?: InputEvent): any {
+    private getEventArgs(command: CommandViewModel, sender: Sender, e?: InputEvent): any {
         const propagation = command.propagation;
         if (propagation === undefined) {
             return undefined;
@@ -209,13 +209,13 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         this.server.executeCommand(new CommandInstruction(command.name, sender.id, args));
         return true;
     }
-    private executeClientsideCommandIfPossible(command: CommandViewModel, sender: Readonly<any>, args: CommandArgs): boolean {
+    private executeClientsideCommandIfPossible(command: CommandViewModel, sender: Sender, args: CommandArgs): boolean {
         const optimization = command.optimization;
         if (optimization === undefined) {
             return false;
         }
 
-        if (!optimization.canExecute(sender.state, args)) {
+        if (!optimization.canExecute(sender, args)) {
             return false;
         }
 
