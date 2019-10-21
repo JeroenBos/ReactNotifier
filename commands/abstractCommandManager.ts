@@ -101,6 +101,10 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
        * @param e Optional event args, which is consumed if specified (i.e. propagation is stopped).
        */
     public executeCommandByName(commandName: string, sender: Sender, e?: InputEvent): void {
+        if(sender.id === undefined && this.commands[commandName] !== undefined && this.commands[commandName].optimization === undefined) {
+            throw new Error('Cannot send a command to the server without a sender.id');
+        }
+        
         const executed = this.executeCommandIfPossible(commandName, sender, e);
         if (!executed && this.hasCommand(commandName)) {
             console.warn(`The command '${commandName}' cannot execute on '${Object.getPrototypeOf(sender).constructor.name}'(id=${sender.id})`);
@@ -201,6 +205,9 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
             return false;
         }
 
+        if (sender.id === undefined)
+            throw new Error('Cannot send a command to the server without a sender.id');
+            
         this.server.executeCommand(new CommandInstruction(command.name, sender.id, args));
         return true;
     }
