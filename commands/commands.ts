@@ -34,16 +34,16 @@ export class CommandBindingWithCommandName {
 export enum OptimizationCanExecute {
     /** Indicates the associated command cannot be executed. 
      * The input that triggered this command will not be consumed. */
-    False,
+    False = 0,
     /** Indicates the client side optimization cannot execute, but the non-optimized form (server side) of the command can be executed.
      * The input that trigged this command will be consumed. */
-    ServersideOnly,
+    ServersideOnly = 1,
     /** Indicates no serverside command should be executed, only this client side 'optimization'. 
      * The input that trigged this command will be consumed. */
-    ClientsideOnly,
+    ClientsideOnly = 2,
     /** Indicates the associated command can be executed. Both serverside and clientside. 
      * The input that trigged this command will be consumed. */
-    True,
+    True = ServersideOnly + ClientsideOnly,
 }
 export enum DefaultEventArgPropagations {
 
