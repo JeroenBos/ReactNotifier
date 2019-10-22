@@ -7,7 +7,7 @@ import { BaseState, Sender } from '../base.interfaces';
 export interface CommandOptimization {
     canExecute(sender: Sender, e: InputEvent | undefined): OptimizationCanExecute;
     /** Returns the new state with the effect of this command. */
-    execute(sender: Sender, e: InputEvent | undefined): BaseState;
+    execute(sender: Sender, e: InputEvent | undefined): void;
 }
 
 export interface CommandViewModel {
