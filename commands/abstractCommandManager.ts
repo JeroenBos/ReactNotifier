@@ -213,10 +213,10 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         }
 
         if (DefaultEventArgPropagations.IsInstanceOf(propagation)) {
-            return DefaultEventArgPropagations.GetDefault(propagation)(e);
+            return DefaultEventArgPropagations.GetDefault(propagation)(sender, e);
         }
         else {
-            return propagation(e);
+            return propagation(sender, e);
         }
     }
 

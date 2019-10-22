@@ -79,4 +79,4 @@ export namespace DefaultEventArgPropagations {
         }
     }
 }
-export type ExplicitEventArgPropgation = ((clientsideEventArgs: InputEvent | undefined) => CommandArgs);
+export type ExplicitEventArgPropgation = (sender: Sender, clientsideEventArgs: InputEvent | undefined) => CommandArgs;
