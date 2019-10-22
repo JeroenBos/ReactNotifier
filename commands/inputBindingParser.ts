@@ -1,13 +1,15 @@
 ﻿import { Key } from 'ts-keycode-enum';
+import { isNumber } from 'util';
+import { assert } from 'jbsnorro';
 
 export type CanonicalInputBinding = string;
 
 export namespace CanonicalInputBinding {
     export function fromKeyboardEvent(e: React.KeyboardEvent, kind: Kind.Down | Kind.Up): CanonicalInputBinding {
-        return toCanonicalKeyboardRepresentation(<Key>e.which, kind, e.shiftKey, e.ctrlKey, e.altKey, e.metaKey, e.repeat);
+        return toCanonicalKeyboardRepresentation(e.which || e.keyCode, kind, e.shiftKey, e.ctrlKey, e.altKey, e.metaKey, e.repeat);
     }
     export function fromMouseEvent(e: React.MouseEvent, kind: Kind): CanonicalInputBinding {
-        return toCanonicalMouseRepresentation(<MouseButton>e.button, kind, e.shiftKey, e.ctrlKey, e.altKey, e.metaKey);
+        return toCanonicalMouseRepresentation(e.button, kind, e.shiftKey, e.ctrlKey, e.altKey, e.metaKey);
     }
 
     export function fromMouseMoveEvent(e: React.MouseEvent): CanonicalInputBinding {
@@ -22,6 +24,8 @@ export namespace CanonicalInputBinding {
         altDown: boolean,
         commandDown: boolean = false,
         repeat: boolean) {
+        assert(isNumber(key), `argument error 'key'`);
+
         const result = sharedToCanonical(shiftDown, ctrlDown, altDown, commandDown)
             + keyToString(key)
             + (kind == Kind.Up ? ' up' : '')
