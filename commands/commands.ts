@@ -10,7 +10,8 @@ export interface CommandOptimization {
     execute(sender: Sender, e: InputEvent | undefined): BaseState;
 }
 
-export interface CommandViewModel extends BaseState {
+export interface CommandViewModel {
+    __id?: number;
     name: string;
     condition?: string | undefined;
     optimization?: CommandOptimization;
