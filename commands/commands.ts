@@ -11,10 +11,29 @@ export interface CommandOptimization {
 }
 
 export interface CommandViewModel {
+    /**
+     * The id of this command. Presence means presence of a serverside complement, and vice versa.
+     */
     __id?: number;
+    /**
+     * The name of this command.
+     */
     name: string;
-    condition?: string | undefined;
+    /**
+     * The conditions under which this command can be executed.
+     * Neither the optimization nor serverside complement is run when the condition is not met.
+     */
+    condition?: string;
+    /**
+     * The fully-clientside execution command. If this command has no serverside complement then the optimization is the entire command;
+     * otherwise they're run both: either the optimization is expected to produce the same or partially same results as by the server,
+     * or the optimization can loading indicators.
+     */
     optimization?: CommandOptimization;
+    /**
+     * An object/function that extracts command arguments from the event arg. 
+     * The command args are serialized and passed to the serverside command, but also to the optimization.
+     */
     propagation?: EventToCommandPropagation;
 }
 
