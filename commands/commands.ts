@@ -1,19 +1,20 @@
 ﻿import 'rxjs/add/operator/toPromise';
-import { CommandInstruction } from './commandInstruction';
 import { CanonicalInputBinding } from './inputBindingParser';
-import { Booleanable, ConditionAST } from './ConditionAST'
+import { Booleanable } from './ConditionAST'
 import { InputEvent, CommandArgs } from './inputTypes';
-import { BaseState } from '../base.interfaces';
+import { BaseState, Sender } from '../base.interfaces';
 
 export interface CommandOptimization {
-    canExecute(sender: BaseState, e: CommandArgs): OptimizationCanExecute;
+    canExecute(sender: Sender, e: InputEvent | undefined): OptimizationCanExecute;
     /** Returns the new state with the effect of this command. */
-    execute(sender: BaseState, e: CommandArgs): BaseState;
+    execute(sender: Sender, e: InputEvent | undefined): BaseState;
 }
 
 export interface CommandViewModel extends BaseState {
     name: string;
     condition?: string | undefined;
+    optimization?: CommandOptimization;
+    propagation?: EventToCommandPropagation;
 }
 
 
@@ -32,16 +33,16 @@ export class CommandBindingWithCommandName {
 export enum OptimizationCanExecute {
     /** Indicates the associated command cannot be executed. 
      * The input that triggered this command will not be consumed. */
-    False,
+    False = 0,
     /** Indicates the client side optimization cannot execute, but the non-optimized form (server side) of the command can be executed.
      * The input that trigged this command will be consumed. */
-    ServersideOnly,
+    ServersideOnly = 1,
     /** Indicates no serverside command should be executed, only this client side 'optimization'. 
      * The input that trigged this command will be consumed. */
-    ClientsideOnly,
+    ClientsideOnly = 2,
     /** Indicates the associated command can be executed. Both serverside and clientside. 
      * The input that trigged this command will be consumed. */
-    True,
+    True = ServersideOnly + ClientsideOnly,
 }
 export enum DefaultEventArgPropagations {
 

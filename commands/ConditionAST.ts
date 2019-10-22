@@ -1,32 +1,27 @@
-﻿import { BaseProps } from "../base.interfaces";
+﻿import { Sender } from "../base.interfaces";
 import { InputEvent, CommandArgs } from '../commands/inputTypes';
 
 export interface Booleanable {
     /**
      * 
      * @param sender
-     * @param e If the input event is missing, it was triggered by code.
+     * @param args If missing, it was triggered by code.
      */
-    toBoolean(sender: BaseProps, e?: InputEvent): boolean;
+    toBoolean(sender: Sender, args?: CommandArgs): boolean;
 }
 
 export abstract class ConditionAST implements Booleanable {
-    public static parse(s: string, flags: ReadonlyMap<string, boolean>): Booleanable {
+    public static parse(s: string, flags: Readonly<Record<string, boolean>>): Booleanable {
         s = s.trim();
-        //if (s.filter(c => c == "(").length != s.filter(c => c == ")").length) {
-        //    throw new Error("Received different number of opening parentheses from closing ones");
-        //}
-
-        //if (s.indexOf(')') < s.indexOf('(')) {
-        //    throw new Error('too many closing parentheses');
-        //}
+        if (s.length == 0)
+            return Constant.True;
 
         const firstOrIndex = s.indexOf("||");
         const firstAndIndex = s.indexOf("&&");
 
         if (firstOrIndex != -1 || firstAndIndex != -1) {
-            const lhs = <ConditionAST>ConditionAST.parse(s.substr(0, firstOrIndex), flags);
-            const rhs = <ConditionAST>ConditionAST.parse(s.substr(firstOrIndex + 2), flags);
+            const lhs = ConditionAST.parse(s.substr(0, firstOrIndex), flags);
+            const rhs = ConditionAST.parse(s.substr(firstOrIndex + 2), flags);
 
             if (firstOrIndex != -1 && firstOrIndex < firstAndIndex) {
                 return new Or(lhs, rhs);
@@ -35,15 +30,15 @@ export abstract class ConditionAST implements Booleanable {
             }
         }
         if (s.charAt(0) == "!") {
-            return new Not(<ConditionAST>ConditionAST.parse(s.substr(1), flags));
+            return new Not(ConditionAST.parse(s.substr(1), flags));
         }
 
-        if (flags.has(s))
-            return new Flag(s, flags.get);
+        if (s in flags)
+            return new Flag(s, s => flags[s]);
 
         throw new Error(`Could not parse '${s}'`);
     }
-    abstract toBoolean(sender: BaseProps, e: CommandArgs): boolean;
+    abstract toBoolean(sender: Sender, e: CommandArgs): boolean;
 }
 class And extends ConditionAST {
 
@@ -53,7 +48,7 @@ class And extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: BaseProps, e: CommandArgs): boolean {
+    toBoolean(sender: Sender, e: CommandArgs): boolean {
         return this.lhs.toBoolean(sender, e) && this.rhs.toBoolean(sender, e);
     }
 }
@@ -64,7 +59,7 @@ class Or extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: BaseProps, e: CommandArgs): boolean {
+    toBoolean(sender: Sender, e: CommandArgs): boolean {
         return this.lhs.toBoolean(sender, e) && this.rhs.toBoolean(sender, e);
     }
 }
@@ -74,7 +69,7 @@ class Not extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: BaseProps, e: CommandArgs): boolean {
+    toBoolean(sender: Sender, e: CommandArgs): boolean {
         return !this.operand.toBoolean(sender, e);
     }
 }
@@ -84,11 +79,22 @@ class Flag extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: BaseProps, e: CommandArgs): boolean {
+    toBoolean(sender: Sender, e: CommandArgs): boolean {
         const result = this.getFlag(this.conditionName);
         if (result === undefined) {
             throw new Error(`Flag '${this.conditionName}' was not found`);
         }
         return result;
+    }
+}
+class Constant extends ConditionAST {
+    public static readonly True = Object.freeze(new Constant(true));
+    public static readonly False = Object.freeze(new Constant(false));
+
+    constructor(private readonly value: boolean) {
+        super();
+    }
+    toBoolean(): boolean {
+        return this.value;
     }
 }

@@ -1,40 +1,15 @@
 ﻿import 'rxjs/add/operator/toPromise';
-import { BaseState, ICommandManager, BaseProps, CommandManagerId, IComponent, IChangePropagator } from '../base.interfaces';
+import { BaseState, ICommandManager, BaseProps, CommandManagerId, IComponent, IChangePropagator, Sender } from '../base.interfaces';
 import { CommandInstruction } from './commandInstruction';
-import { CommandBindingWithCommandName, CommandOptimization, EventToCommandPropagation, DefaultEventArgPropagations, CommandViewModel } from './commands';
+import { CommandBindingWithCommandName, CommandOptimization, EventToCommandPropagation, DefaultEventArgPropagations, CommandViewModel, OptimizationCanExecute } from './commands';
 import { ConditionAST } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
 import { InputEvent, CommandArgs } from './inputTypes';
 import { SimpleStateInfo } from '../base.component';
+import { BindingScopeEnum } from 'inversify';
+
 
 export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerState> {
-    isComponent(_propertyName: string | number): boolean {
-        return false;
-    }
-    public readonly stateInfo: SimpleStateInfo<CommandManagerProps> = {
-        'server': false
-    };
-    // public readonly stateInfo: SimpleStateInfo<AppState> = {
-    // a list of properties of AppState that represents props. Of each such property K, we have a props type P and state type S
-    // An entry should exist with name K and return true whenever a keyof P is specified
-    // 
-    // instructions:
-    // for all properties/keys K in AppState that represents props P<K> = AppState[K]
-    // add a function that returns true whenever an argument is specified that is a key of P<K>
-    //
-    // implementation:
-    // all properties of AppState are: 'counter', 'app'
-    // 'app' represents props
-    // the keys of P = AppState['app'] are: '__id', 'rootEquation'.
-    // Suppose that 'rootEquation' was part of MainWindowState instead of MainWindowProps, then P would have only contained '__id'
-    // in this case (which we're doing for now), true should be returned only for '__id'
-    //     
-    // example implementation 2:
-    // all properties of CommandManagerState are: flags, commands, inputBindings
-    // out of these, none represent props, we we have {}, which they'll be set through CommandManager.setState(...)
-    // };
-    private static counter = 0;
-    public readonly _uid = AbstractCommandManager.counter++;
     private _state: CommandManagerState;
     public get state(): CommandManagerState {
         return this._state;
@@ -51,16 +26,17 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         this.verifyProps(props);
 
-        this._state = this._defaultState;
+        this._state = this.getInitialState(props);
         this._state = this.server.register(this) as Readonly<CommandManagerState>;
         verifyState(this._state);
     }
+
     /** The purpose of this property is to allow the ctor to access the abstract property 'defaultState'. */
-    private get _defaultState(): Readonly<CommandManagerState> {
+    private getInitialState(_props: CommandManagerProps): Readonly<CommandManagerState> {
         return {
-            flags: new Map<string, boolean>(),
-            inputBindings: new Map<CanonicalInputBinding, CommandBindingWithCommandName[]>(),
-            commands: {}
+            flags: {},
+            inputBindings: {},
+            commands: {},
         };
     }
     public get flags() {
@@ -79,45 +55,49 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return this.props.server;
     }
 
-    private readonly commandOptimizations = new Map<string, CommandOptimization>();
-    private readonly commandEventPropagations = new Map<string, EventToCommandPropagation>();
+    public add(viewModel: CommandViewModel): void {
+        if (viewModel.name in this.commands)
+            throw new Error(`The specified command view model with name '${viewModel.name}' already exists`);
 
-    public optimizeCommandClientside(commandName: string, command: CommandOptimization) {
+        this.commands[viewModel.name] = viewModel;
+    }
+    public addCommandOptimization(commandName: string, command: CommandOptimization): void {
         if (commandName == null || commandName == '') {
             throw new Error('Invalid command name specified');
         }
 
-        this.commandOptimizations.set(commandName, command);
+        if (!this.hasCommand(commandName)) {
+            this.commands[commandName] = { name: commandName };
+        }
+        this.commands[commandName].optimization = command;
     }
-    public setEventArgPropagation(commandName: string, propagation: EventToCommandPropagation) {
+    public setEventArgPropagation(commandName: string, propagation: EventToCommandPropagation): void {
         if (commandName == null || commandName == '') {
             throw new Error('Invalid command name specified');
         }
         if (!this.hasCommand(commandName)) {
-            throw new Error(`No command with the name '${commandName}' exists`);
+            this.commands[commandName] = { name: commandName };
         }
 
-        this.commandEventPropagations.set(commandName, propagation);
+        this.commands[commandName].propagation = propagation;
     }
-    public bind(commandName: string, inputBinding: string, condition: string = "") {
+    public bind(commandName: string, inputBinding: CanonicalInputBinding, condition: string = "") {
         const commandBinding = this.commands[commandName];
         if (commandBinding === undefined) {
             throw new Error(`The command '${name}' is not registered at the command manager`);
         }
 
-        const canonicalInput = CanonicalInputBinding.parse(inputBinding);
         const conditionAST = ConditionAST.parse(condition, this.flags);
 
-        const hasExistingBindingForThisInput = this.inputBindings.has(canonicalInput);
+        const hasExistingBindingForThisInput = inputBinding in this.inputBindings;
         if (!hasExistingBindingForThisInput) {
-            this.inputBindings.set(canonicalInput, []);
+            this.inputBindings[inputBinding] = [];
         }
-        this.inputBindings.get(canonicalInput)!.push(new CommandBindingWithCommandName(commandName, conditionAST, canonicalInput));
+        this.inputBindings[inputBinding].push(new CommandBindingWithCommandName(commandName, conditionAST, inputBinding));
 
     }
     public hasCommand(name: string): boolean {
-        return this.commands[name] !== undefined
-            && !this.commandOptimizations.has(name); // if this is true, then only a clientside command exists.
+        return name in this.commands;
     }
 
     /**
@@ -126,41 +106,46 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
        * @param commandName
        * @param e Optional event args, which is consumed if specified (i.e. propagation is stopped).
        */
-    public executeCommandByName(commandName: string, sender: IComponent, e?: InputEvent): void {
-        const executed = this.executeCommandIfPossible(commandName, sender, e);
+    public executeCommandByName(commandName: string, sender: Sender, e?: InputEvent): void {
+        const s = sender as { __id?: number };
+        if (s.__id === undefined && this.commands[commandName] !== undefined && this.commands[commandName].optimization === undefined) {
+            throw new Error('Cannot send a command to the server without a sender.id');
+        }
+
+        const executed = this.executeCommandIfPossible(commandName, s, e);
         if (!executed && this.hasCommand(commandName)) {
-            console.warn(`The command '${commandName}' cannot execute on '${Object.getPrototypeOf(sender).constructor.name}'(id=${sender.__id})`);
+            console.warn(`The command '${commandName}' cannot execute on '${Object.getPrototypeOf(s).constructor.name}'(id=${s.__id})`);
         }
     }
-    public handleMouseMove(sender: IComponent, e: React.MouseEvent): void {
+    public handleMouseMove(sender: Sender, e: React.MouseEvent): void {
 
         this.handle(CanonicalInputBinding.fromMouseMoveEvent(e), sender, e);
     }
-    public handleMouseClick(sender: IComponent, e: React.MouseEvent): void {
+    public handleMouseClick(sender: Sender, e: React.MouseEvent): void {
         // in javascript a mouse click is a left mouse button down and up event together, triggered at the moment of up event
         // for simplicity I simply trigger another kind of event, but I think the canonical input 'click' could be inferred from up and down events
         this.handle(CanonicalInputBinding.fromMouseEvent(e, Kind.Click), sender, e);
     }
-    public handleMouseDown(sender: IComponent, e: React.MouseEvent): void {
+    public handleMouseDown(sender: Sender, e: React.MouseEvent): void {
         this.handle(CanonicalInputBinding.fromMouseEvent(e, Kind.Down), sender, e);
     }
-    public handleMouseUp(sender: IComponent, e: React.MouseEvent): void {
+    public handleMouseUp(sender: Sender, e: React.MouseEvent): void {
         this.handle(CanonicalInputBinding.fromMouseEvent(e, Kind.Up), sender, e);
     }
-    public handleKeyPress(sender: IComponent, e: React.KeyboardEvent): void {
+    public handleKeyPress(sender: Sender, e: React.KeyboardEvent): void {
         this.handle(CanonicalInputBinding.fromKeyboardEvent(e, Kind.Down), sender, e);
     }
-    public handleKeyUp(sender: IComponent, e: React.KeyboardEvent): void {
+    public handleKeyUp(sender: Sender, e: React.KeyboardEvent): void {
         this.handle(CanonicalInputBinding.fromKeyboardEvent(e, Kind.Up), sender, e);
     }
 
 
     private handle(
         inputBinding: CanonicalInputBinding,
-        sender: IComponent,
+        sender: Sender,
         e: InputEvent): void {
 
-        const commandNames = this.getCommandBindingsFor(inputBinding, sender.props, e);
+        const commandNames = this.getCommandBindingsFor(inputBinding, sender, e);
 
         for (let i = 0; i < commandNames.length; i++) {
 
@@ -177,16 +162,15 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     /**
      * Gets the names of the commands bound to the specified input, for which the binding condition is true.
      */
-    private getCommandBindingsFor(inputBinding: CanonicalInputBinding, sender: Readonly<BaseProps>, e: InputEvent): string[] {
-        const commandBindings = this.inputBindings.get(inputBinding);
-        if (commandBindings === undefined) {
+    private getCommandBindingsFor(inputBinding: CanonicalInputBinding, sender: Sender, e: InputEvent): string[] {
+        if (!(inputBinding in this.inputBindings))
             return [];
-        }
 
         const commandNames: string[] = [];
 
-        commandBindings.forEach((binding: CommandBindingWithCommandName) => {
-            if (binding.condition.toBoolean(sender, e)) {
+        this.inputBindings[inputBinding].forEach((binding: CommandBindingWithCommandName) => {
+            const args = binding.commandName in this.commands ? this.getEventArgs(this.commands[binding.commandName], sender, e) : undefined;
+            if (binding.condition.toBoolean(sender, args)) {
                 commandNames.push(binding.commandName);
             }
         });
@@ -194,16 +178,36 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return commandNames;
     }
 
-    private executeCommandIfPossible(commandName: string, sender: IComponent, e?: InputEvent): boolean {
+    private executeCommandIfPossible(commandName: string, sender: Sender, e?: InputEvent): boolean {
+        if (!this.hasCommand(commandName)) {
+            console.warn(`The command '${commandName}' does not exist`);
+            return false;
+        }
 
-        const args = this.getEventArgs(commandName, sender.state, e);
-        const serverSideExecuted = this.executeServersideCommandIfPossible(commandName, sender.props, args, e);
-        const clientSideExecuted = this.executeClientsideCommandIfPossible(commandName, sender, args);
+        const command = this.commands[commandName];
+        const args = this.getEventArgs(command, sender, e);
+        if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, args)) {
+            return false;
+        }
 
-        return serverSideExecuted || clientSideExecuted;
+        const sides = command.optimization == undefined ? OptimizationCanExecute.ServersideOnly : command.optimization.canExecute(sender, e);
+
+        if ((sides & OptimizationCanExecute.ServersideOnly) != 0) {
+            if (!('__id' in sender))
+                throw new Error('Cannot send a command to the server without a sender.id');
+
+            this.server.executeCommand(new CommandInstruction(command.name, sender.__id, args));
+        }
+
+        if ((sides & OptimizationCanExecute.ClientsideOnly) != 0) {
+            command.optimization!.execute(sender, e);
+        }
+
+        return sides != 0;
     }
-    private getEventArgs(commandName: string, sender: BaseState, e?: InputEvent): any {
-        const propagation = this.commandEventPropagations.get(commandName);
+
+    private getEventArgs(command: CommandViewModel, sender: Sender, e?: InputEvent): CommandArgs {
+        const propagation = command.propagation;
         if (propagation === undefined) {
             return undefined;
         }
@@ -215,42 +219,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
             return propagation(e);
         }
     }
-    private executeServersideCommandIfPossible(commandName: string, sender: Readonly<BaseProps>, args: CommandArgs, e: InputEvent | undefined): boolean {
 
-        const command = this.commands[commandName];
-        if (command === undefined) {
-            if (this.commandOptimizations.get(commandName) === undefined) {
-                console.warn(`The command '${commandName}' does not exist`);
-            }
-            return false;
-        }
-
-        if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, e)) {
-            return false;
-        }
-
-        this.server.executeCommand(new CommandInstruction(commandName, sender, args));
-        return true;
-    }
-    private executeClientsideCommandIfPossible(commandName: string, sender: IComponent, args: CommandArgs): boolean {
-        const command = this.commandOptimizations.get(commandName);
-        if (command === undefined) {
-            return false;
-        }
-
-        if (!command.canExecute(sender.state, args)) {
-            return false;
-        }
-        sender.setState((prev, props) => {
-            if (!command.canExecute(prev, args)) // can be true due to async nature of React 
-            {
-                console.warn(`The command '${commandName}' ultimately was not able to execute due to asynchronicity.`);
-                return prev;
-            }
-            return command.execute(prev, args)
-        });
-        return true;
-    }
 
     // IComponent members
     setState(
@@ -262,7 +231,6 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         Object.assign(this._state, newPartialState); // Should this be deep assignment? What does react do?
         // in case React does shallow assignment (my expectation, but dunno), then update-call should return the entire subproperty when a subusbsubproperty is modified
     }
-
     assertIsValidState(item: any, requireAllKeys: boolean): void {
         if (requireAllKeys) {
             this.verifyState(item);
@@ -270,6 +238,12 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
             this.verifyPartialState(item);
         }
     }
+    isComponent(_propertyName: string | number): boolean {
+        return false;
+    }
+    public readonly stateInfo: SimpleStateInfo<CommandManagerProps> = {
+        'server': false
+    };
 }
 
 
@@ -279,9 +253,9 @@ export interface CommandManagerProps extends BaseProps {
 }
 
 export interface CommandManagerState extends BaseState {
-    flags: Map<string, boolean>;
+    flags: Record<string, boolean>;
     commands: CommandsMap;
-    inputBindings: Map<CanonicalInputBinding, CommandBindingWithCommandName[]>;
+    inputBindings: Record<CanonicalInputBinding, CommandBindingWithCommandName[]>;
 }
 
 export type CommandsMap = Record<string, CommandViewModel>;
