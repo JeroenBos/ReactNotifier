@@ -47,7 +47,7 @@ export interface ICommandManager extends IComponent<CommandManagerState> {
     handleMouseClick(sender: Sender, e: React.MouseEvent): void;
     handleMouseDown(sender: Sender, e: React.MouseEvent): void;
     handleMouseUp(sender: Sender, e: React.MouseEvent): void;
-    handleKeyPress(sender: Sender, e: React.KeyboardEvent): void;
+    handleKeyDown(sender: Sender, e: React.KeyboardEvent): void;
     handleKeyUp(sender: Sender, e: React.KeyboardEvent): void
 
     executeCommandByName(commandName: string, sender: Sender, e?: InputEvent): void;

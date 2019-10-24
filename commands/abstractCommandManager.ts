@@ -132,7 +132,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     public handleMouseUp(sender: Sender, e: React.MouseEvent): void {
         this.handle(CanonicalInputBinding.fromMouseEvent(e, Kind.Up), sender, e);
     }
-    public handleKeyPress(sender: Sender, e: React.KeyboardEvent): void {
+    public handleKeyDown(sender: Sender, e: React.KeyboardEvent): void {
         this.handle(CanonicalInputBinding.fromKeyboardEvent(e, Kind.Down), sender, e);
     }
     public handleKeyUp(sender: Sender, e: React.KeyboardEvent): void {
