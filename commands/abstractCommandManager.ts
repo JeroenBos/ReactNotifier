@@ -2,7 +2,7 @@
 import { BaseState, ICommandManager, BaseProps, CommandManagerId, IComponent, IChangePropagator, Sender } from '../base.interfaces';
 import { CommandInstruction } from './commandInstruction';
 import { CommandBindingWithCommandName, CommandOptimization, EventToCommandPropagation, DefaultEventArgPropagations, CommandViewModel, OptimizationCanExecute } from './commands';
-import { ConditionAST } from './ConditionAST'
+import { ConditionAST, FlagDelegate } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
 import { InputEvent, CommandArgs } from './inputTypes';
 import { SimpleStateInfo } from '../base.component';
@@ -253,7 +253,7 @@ export interface CommandManagerProps extends BaseProps {
 }
 
 export interface CommandManagerState extends BaseState {
-    flags: Record<string, () => boolean>;
+    flags: Record<string, FlagDelegate>;
     commands: CommandsMap;
     inputBindings: Record<CanonicalInputBinding, CommandBindingWithCommandName[]>;
 }

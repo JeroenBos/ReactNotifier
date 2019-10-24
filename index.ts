@@ -10,6 +10,7 @@ export { ChangesPropagator, IResponse } from "./changesPropagator/ChangesPropaga
 export { AbstractCommandManager, CommandManagerProps, CommandManagerState } from './commands/abstractCommandManager';
 export { CommandInstruction } from './commands/commandInstruction';
 export { CommandViewModel } from './commands/commands';
+export { FlagDelegate } from './commands/ConditionAST';
 export { CanonicalInputBinding } from './commands/inputBindingParser';
 export { InputEvent } from './commands/inputTypes';
 export { commandsTypeDescription } from './commands/commands.typesystem';

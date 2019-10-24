@@ -10,18 +10,20 @@ export interface Booleanable {
     toBoolean(sender: Sender, args?: CommandArgs): boolean;
 }
 
+export type FlagDelegate = (sender: Sender, args: CommandArgs) => boolean;
+
 export abstract class ConditionAST implements Booleanable {
-    public static parse(s: string, flags: Readonly<Record<string, () => boolean>>): Booleanable {
-        s = s.trim();
-        if (s.length == 0)
+    public static parse(expr: string, flags: Readonly<Record<string, FlagDelegate>>): Booleanable {
+        expr = expr.trim();
+        if (expr.length == 0)
             return Constant.True;
 
-        const firstOrIndex = s.indexOf("||");
-        const firstAndIndex = s.indexOf("&&");
+        const firstOrIndex = expr.indexOf("||");
+        const firstAndIndex = expr.indexOf("&&");
 
         if (firstOrIndex != -1 || firstAndIndex != -1) {
-            const lhs = ConditionAST.parse(s.substr(0, firstOrIndex), flags);
-            const rhs = ConditionAST.parse(s.substr(firstOrIndex + 2), flags);
+            const lhs = ConditionAST.parse(expr.substr(0, firstOrIndex), flags);
+            const rhs = ConditionAST.parse(expr.substr(firstOrIndex + 2), flags);
 
             if (firstOrIndex != -1 && firstOrIndex < firstAndIndex) {
                 return new Or(lhs, rhs);
@@ -29,16 +31,17 @@ export abstract class ConditionAST implements Booleanable {
                 return new And(lhs, rhs);
             }
         }
-        if (s.charAt(0) == "!") {
-            return new Not(ConditionAST.parse(s.substr(1), flags));
+        if (expr.charAt(0) == "!") {
+            return new Not(ConditionAST.parse(expr.substr(1), flags));
+        }
+        if (expr in flags) {
+            // then the expression is simply a flag name
+            return new Flag(expr, s => flags[s]);
         }
 
-        if (s in flags)
-            return new Flag(s, s => flags[s]());
-
-        throw new Error(`Could not parse '${s}'`);
+        throw new Error(`Could not parse '${expr}'`);
     }
-    abstract toBoolean(sender: Sender, e: CommandArgs): boolean;
+    abstract toBoolean(sender: Sender, args: CommandArgs): boolean;
 }
 class And extends ConditionAST {
 
@@ -48,8 +51,8 @@ class And extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: Sender, e: CommandArgs): boolean {
-        return this.lhs.toBoolean(sender, e) && this.rhs.toBoolean(sender, e);
+    toBoolean(sender: Sender, args: CommandArgs): boolean {
+        return this.lhs.toBoolean(sender, args) && this.rhs.toBoolean(sender, args);
     }
 }
 class Or extends ConditionAST {
@@ -59,8 +62,8 @@ class Or extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: Sender, e: CommandArgs): boolean {
-        return this.lhs.toBoolean(sender, e) && this.rhs.toBoolean(sender, e);
+    toBoolean(sender: Sender, args: CommandArgs): boolean {
+        return this.lhs.toBoolean(sender, args) && this.rhs.toBoolean(sender, args);
     }
 }
 class Not extends ConditionAST {
@@ -69,22 +72,22 @@ class Not extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: Sender, e: CommandArgs): boolean {
-        return !this.operand.toBoolean(sender, e);
+    toBoolean(sender: Sender, args: CommandArgs): boolean {
+        return !this.operand.toBoolean(sender, args);
     }
 }
 class Flag extends ConditionAST {
     public constructor(private readonly conditionName: string,
-        private readonly getFlag: (conditionName: string) => boolean | undefined) {
+        private readonly getFlag: (conditionName: string) => FlagDelegate | undefined) {
         super();
     }
 
-    toBoolean(sender: Sender, e: CommandArgs): boolean {
+    toBoolean(sender: Sender, args: CommandArgs): boolean {
         const result = this.getFlag(this.conditionName);
         if (result === undefined) {
             throw new Error(`Flag '${this.conditionName}' was not found`);
         }
-        return result;
+        return result(sender, args);
     }
 }
 class Constant extends ConditionAST {
