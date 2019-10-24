@@ -253,7 +253,7 @@ export interface CommandManagerProps extends BaseProps {
 }
 
 export interface CommandManagerState extends BaseState {
-    flags: Record<string, boolean>;
+    flags: Record<string, () => boolean>;
     commands: CommandsMap;
     inputBindings: Record<CanonicalInputBinding, CommandBindingWithCommandName[]>;
 }

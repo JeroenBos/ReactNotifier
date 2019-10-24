@@ -1,5 +1,5 @@
 ﻿import { Sender } from "../base.interfaces";
-import { InputEvent, CommandArgs } from '../commands/inputTypes';
+import { CommandArgs } from '../commands/inputTypes';
 
 export interface Booleanable {
     /**
@@ -11,7 +11,7 @@ export interface Booleanable {
 }
 
 export abstract class ConditionAST implements Booleanable {
-    public static parse(s: string, flags: Readonly<Record<string, boolean>>): Booleanable {
+    public static parse(s: string, flags: Readonly<Record<string, () => boolean>>): Booleanable {
         s = s.trim();
         if (s.length == 0)
             return Constant.True;
@@ -34,7 +34,7 @@ export abstract class ConditionAST implements Booleanable {
         }
 
         if (s in flags)
-            return new Flag(s, s => flags[s]);
+            return new Flag(s, s => flags[s]());
 
         throw new Error(`Could not parse '${s}'`);
     }

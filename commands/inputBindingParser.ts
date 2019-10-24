@@ -5,8 +5,15 @@ import { assert } from 'jbsnorro';
 export type CanonicalInputBinding = string;
 
 export namespace CanonicalInputBinding {
+    /* Returns whether the specified event has any of the non-compound specified keys as keycode. */
+    export function hasAnyOf(e: React.KeyboardEvent, ...keys: Key[]) {
+        return keys.includes(getKeycode(e));
+    }
+    export function getKeycode(e: React.KeyboardEvent): Key {
+        return e.which || e.keyCode;
+    }
     export function fromKeyboardEvent(e: React.KeyboardEvent, kind: Kind.Down | Kind.Up): CanonicalInputBinding {
-        return toCanonicalKeyboardRepresentation(e.which || e.keyCode, kind, e.shiftKey, e.ctrlKey, e.altKey, e.metaKey, e.repeat);
+        return toCanonicalKeyboardRepresentation(getKeycode(e), kind, e.shiftKey, e.ctrlKey, e.altKey, e.metaKey, e.repeat);
     }
     export function fromMouseEvent(e: React.MouseEvent, kind: Kind): CanonicalInputBinding {
         return toCanonicalMouseRepresentation(e.button, kind, e.shiftKey, e.ctrlKey, e.altKey, e.metaKey);
