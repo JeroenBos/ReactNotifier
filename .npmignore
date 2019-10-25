@@ -7,3 +7,5 @@ dist\types\node_modules\**
 *.ts
 # but include d.ts:
 !*.d.ts
+dist\test.js
+dist\test.js.map
