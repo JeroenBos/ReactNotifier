@@ -6,7 +6,6 @@ import { ConditionAST, FlagDelegate } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
 import { InputEvent, CommandArgs } from './inputTypes';
 import { SimpleStateInfo } from '../base.component';
-import { BindingScopeEnum } from 'inversify';
 
 
 export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerState> {
@@ -84,7 +83,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     public bind(commandName: string, inputBinding: CanonicalInputBinding, condition: string = "") {
         const commandBinding = this.commands[commandName];
         if (commandBinding === undefined) {
-            throw new Error(`The command '${name}' is not registered at the command manager`);
+            throw new Error(`The command '${commandName}' is not registered at the command manager`);
         }
 
         const conditionAST = ConditionAST.parse(condition, this.flags);
