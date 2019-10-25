@@ -18,19 +18,14 @@ export abstract class ConditionAST implements Booleanable {
         if (expr.length == 0)
             return Constant.True;
 
-        const firstOrIndex = expr.indexOf("||");
-        const firstAndIndex = expr.indexOf("&&");
+        const orNode = ConditionAST.parseBinary(expr, "||", Or, flags);
+        if (orNode !== undefined)
+            return orNode;
 
-        if (firstOrIndex != -1 || firstAndIndex != -1) {
-            const lhs = ConditionAST.parse(expr.substr(0, firstOrIndex), flags);
-            const rhs = ConditionAST.parse(expr.substr(firstOrIndex + 2), flags);
+        const andNode = ConditionAST.parseBinary(expr, "&&", And, flags);
+        if (andNode !== undefined)
+            return andNode;
 
-            if (firstOrIndex != -1 && firstOrIndex < firstAndIndex) {
-                return new Or(lhs, rhs);
-            } else {
-                return new And(lhs, rhs);
-            }
-        }
         if (expr.charAt(0) == "!") {
             return new Not(ConditionAST.parse(expr.substr(1), flags));
         }
@@ -40,6 +35,20 @@ export abstract class ConditionAST implements Booleanable {
         }
 
         throw new Error(`Could not parse '${expr}'`);
+    }
+    private static parseBinary(
+        expr: string, // is assumed to be trimmed
+        op: string,
+        binaryASTNode: new (rhs: ConditionAST, lhs: ConditionAST) => ConditionAST,
+        flags: Readonly<Record<string, FlagDelegate>>): ConditionAST | undefined {
+
+        const orIndex = expr.indexOf(op);
+        if (orIndex != -1) {
+            const lhs = ConditionAST.parse(expr.substr(0, orIndex), flags);
+            const rhs = ConditionAST.parse(expr.substr(orIndex + op.length), flags);
+            return new binaryASTNode(lhs, rhs);
+        }
+        return undefined;
     }
     abstract toBoolean(sender: Sender, args: CommandArgs): boolean;
 }
