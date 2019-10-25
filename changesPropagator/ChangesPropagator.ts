@@ -90,7 +90,7 @@ export class ChangesPropagator implements IChangePropagator {
     }
 
 
-    public async open(initialization: Promise<any>): Promise<void> {
+    public async open(initialization?: Promise<any>): Promise<void> {
         await this.postAndProcess('open', undefined, initialization);
     }
     public async registerRequest(): Promise<void> {
