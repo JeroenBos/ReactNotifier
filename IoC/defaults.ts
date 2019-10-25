@@ -24,8 +24,9 @@ export const MockCommandInstruction: CommandInstruction = {
 
 export class MockHttp implements Http {
     private responseCount = 0;
+    private getResponseCount = 0;
     private readonly predefinedResponses: IResponse['changes'][];
-    constructor(predefinedResponses: ITestResponse[]) {
+    constructor(predefinedResponses: ITestResponse[], private readonly predefinedGETResponses: string[] = []) {
         predefinedResponses.map((response, i) => {
             response.forEach(change => {
                 if (!('instructionId' in change)) {
@@ -37,13 +38,22 @@ export class MockHttp implements Http {
     }
     async post(_url: string, _data: CommandInstruction | {}): Promise<IResponse> {
         if (this.responseCount >= this.predefinedResponses.length)
-            throw new Error(`All ${this.predefinedResponses.length} mock responses have been enumerated`);
+            throw new Error(`All ${this.predefinedResponses.length} mock POST responses have been enumerated`);
         const response: IResponse = {
             changes: this.predefinedResponses[this.responseCount],
             rerequest: false
         };
 
         this.responseCount++;
+        return Promise.resolve(response);
+    }
+
+    async get(_url: string, _data: CommandInstruction | {}): Promise<string> {
+        if (this.responseCount >= this.predefinedGETResponses.length)
+            throw new Error(`All ${this.predefinedGETResponses.length} mock GET responses have been enumerated`);
+
+        const response = this.predefinedGETResponses[this.getResponseCount];
+        this.getResponseCount++;
         return Promise.resolve(response);
     }
 }
