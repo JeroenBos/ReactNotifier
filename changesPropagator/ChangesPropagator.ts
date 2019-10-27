@@ -688,7 +688,16 @@ export class ChangesPropagator implements IChangePropagator {
                 }
                 currentResult = currentResult[propertyName];
             }
-            currentResult[change_propertyName] = change_value;
+
+            // allow the clientside to set something and for the server to associate an id to it later:
+            const merge = typeof currentOldState == 'object'
+                && currentOldState !== null
+                && !isReference(currentOldState[change_propertyName])
+                && typeof currentOldState[change_propertyName] == 'object'
+                && currentOldState[change_propertyName] !== null
+                && isReference(change_value);
+
+            currentResult[change_propertyName] = merge ? { ...currentOldState[change_propertyName], ...(change_value as any) } : change_value;
         }
         return result;
     }
