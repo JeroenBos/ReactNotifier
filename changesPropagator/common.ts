@@ -1,7 +1,7 @@
 import { BaseProps, IComponent } from "../base.interfaces";
 
 export type SerializedComponentProps = (BaseProps & { isCollection: boolean });
-export type SerializedType = SerializedComponentProps | string | number | object;
+export type SerializedType = SerializedComponentProps | string | number | boolean | object;
 export type AdmissiblePrimitiveType = string | number | object;
 export function isComponentProps(obj: any): obj is SerializedComponentProps & { isCollection: boolean } {
     return obj != null && obj.__id !== undefined;
