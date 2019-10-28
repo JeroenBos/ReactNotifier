@@ -44,7 +44,7 @@ describe('2. App ', () => {
             const app = mount<AppComponent>(<AppComponent __id={AppId} />);
             await container.server.executeCommand(MockCommandInstruction);
             app.update();
-            const window = app.childAt(0);
+            const window: any = app.childAt(0);
             if (!wraps<MainWindowComponent>(window, 'MainWindowComponent')) throw new Error('MainWindow expected');
             appState = app.instance().state;
             windowProps = window.props();
