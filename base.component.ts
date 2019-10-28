@@ -162,6 +162,7 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
         this.server.unregister(this);
     }
 
+    /* DO NOT USE. Set state via the changes propagator instead. */
     public setState<K extends keyof S>(
         update: (prev: Readonly<S>, props: Readonly<TProps>) => (Pick<S, K> | S | null)
     ) {
