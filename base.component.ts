@@ -152,7 +152,7 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
      */
     protected abstract getInitialState(props: Readonly<TProps>): Readonly<S>;
     UNSAFE_componentWillReceiveProps(nextProps: Readonly<TProps>) {
-        if (this.props !== nextProps)
+        if (this.props != nextProps)
             this.setState(() => this.getInitialState(nextProps));
     }
     componentDidMount() {
