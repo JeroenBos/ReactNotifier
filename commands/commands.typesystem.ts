@@ -1,5 +1,5 @@
 import { ILogger, RecordTypeDescription, ITypeDescriptions, PrimitiveTypes } from 'jbsnorro-typesafety';
-import { GetKey } from 'jbsnorro-typesafety/typeHelper';
+import { GetKey } from 'jbsnorro-typesafety';
 import { CommandManagerState, CommandViewModel } from '..';
 
 type Types = PrimitiveTypes & {

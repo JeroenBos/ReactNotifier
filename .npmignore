@@ -9,3 +9,4 @@ dist\types\node_modules\**
 !*.d.ts
 dist\test.js
 dist\test.js.map
+webpack.config.js

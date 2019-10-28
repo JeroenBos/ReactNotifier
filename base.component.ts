@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { NotNeverValues, IsNotNever, GetKey } from 'jbsnorro-typesafety/typeHelper';
+import { GetKey } from 'jbsnorro-typesafety';
 import { BaseState, BaseProps, IComponent } from './base.interfaces';
 import container from './IoC/container';
 import { identifiers } from './IoC/keys';
 import { UncheckedOmit } from 'jbsnorro';
 import { TypeSystem, PrimitiveTypes } from 'jbsnorro-typesafety';
+import { IsNotNever, NotNeverValues } from 'jbsnorro-typesafety/dist/types/typeHelper';
 
 
 // The state info attribute has the following information:
