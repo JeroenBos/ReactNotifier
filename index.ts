@@ -6,7 +6,7 @@ export { TypedContainer } from './IoC/container';
 export { IChangePropagator, BaseProps, AppId, UNINITIALIZED_ID, ICommandManager, CommandManagerId, BaseState, IComponent, Sender } from './base.interfaces';
 export { BaseComponent, SimpleStateInfo, StateInfoLocalHelper } from './base.component';
 export { Http } from './changesPropagator/http';
-export { ChangesPropagator, IResponse } from "./changesPropagator/ChangesPropagator";
+export { ChangesPropagator, IResponse, IPropertyChange } from "./changesPropagator/ChangesPropagator";
 export { AbstractCommandManager, CommandManagerProps, CommandManagerState } from './commands/abstractCommandManager';
 export { CommandInstruction } from './commands/commandInstruction';
 export { CommandViewModel } from './commands/commands';
