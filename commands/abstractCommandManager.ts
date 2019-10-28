@@ -192,7 +192,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         const sides = command.optimization == undefined ? OptimizationCanExecute.ServersideOnly : command.optimization.canExecute(sender, e);
 
         if ((sides & OptimizationCanExecute.ServersideOnly) != 0 && command.__id !== undefined) {
-            if (!('__id' in sender))
+            if (sender === null || !('__id' in sender))
                 throw new Error('Cannot send a command to the server without a sender.id');
 
             this.server.executeCommand(new CommandInstruction(command.name, sender.__id, args));
