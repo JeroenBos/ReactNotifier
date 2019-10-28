@@ -125,7 +125,7 @@ export class ChangesPropagator implements IChangePropagator {
         return this.http.post(url, data || {});
     }
 
-    private processResponse(response: IResponse) {
+    private processResponse(response: IResponse): void {
         response.changes.forEach(change => assert(change.id >= 0, 'change with negative id specified'));
         const clonedResponse: IResponse = JSON.parse(JSON.stringify(response));
         const changesWithoutRootRefs = clonedResponse.changes.filter(change => {
