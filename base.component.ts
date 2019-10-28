@@ -3,7 +3,7 @@ import { GetKey } from 'jbsnorro-typesafety';
 import { BaseState, BaseProps, IComponent } from './base.interfaces';
 import container from './IoC/container';
 import { identifiers } from './IoC/keys';
-import { UncheckedOmit } from 'jbsnorro';
+import { UncheckedOmit, assert } from 'jbsnorro';
 import { TypeSystem, PrimitiveTypes } from 'jbsnorro-typesafety';
 import { IsNotNever, NotNeverValues } from 'jbsnorro-typesafety/dist/types/typeHelper';
 
@@ -106,14 +106,14 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
         stateTypeKey: GetKey<S, CheckableTypes>,
     ) {
         super(props);
-        if (props == undefined) throw new Error(`Argument 'props' is null or undefined`);
-        if (typesystem == undefined) throw new Error(`Argument 'typesystem' is null or undefined`);
-        if (propsTypeKey == undefined) throw new Error(`Argument 'propsTypeKey' is null or undefined`);
-        if (stateTypeKey == undefined) throw new Error(`Argument 'stateTypeKey' is null or undefined`);
-        if (!typesystem.hasDescription(propsTypeKey)) throw new Error(`Argument 'propsTypeKey':'${propsTypeKey}' is not a key in the specified type system`);
-        if (!typesystem.hasDescription(stateTypeKey)) throw new Error(`Argument 'propsTypeKey':'${stateTypeKey}' is not a key in the specified type system`);
-        if (this.stateInfo === undefined) throw new Error(`'state info' is missing. You need to override it as getter: field assignment is too late'`);
-        if (this.getInitialState === undefined) throw new Error(`'getInitialState' is missing. You need to override it: assignment is too late`);
+        assert(props != undefined, `Argument 'props' is null or undefined`);
+        assert(typesystem != undefined, `Argument 'typesystem' is null or undefined`);
+        assert(propsTypeKey != undefined, `Argument 'propsTypeKey' is null or undefined`);
+        assert(stateTypeKey != undefined, `Argument 'stateTypeKey' is null or undefined`);
+        assert(typesystem.hasDescription(propsTypeKey), `Argument 'propsTypeKey':'${propsTypeKey}' is not a key in the specified type system`);
+        assert(typesystem.hasDescription(stateTypeKey), `Argument 'propsTypeKey':'${stateTypeKey}' is not a key in the specified type system`);
+        assert(this.stateInfo !== undefined, `'state info' is missing. You need to override it as getter: field assignment is too late'`);
+        assert(this.getInitialState !== undefined, `'getInitialState' is missing. You need to override it: assignment is too late`);
 
         const verifyProps = typesystem.assertF(propsTypeKey as any);
         this.verifyState = typesystem.assertF(stateTypeKey as any);
@@ -167,8 +167,7 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
     ) {
         super.setState((prev: Readonly<S>, props: Readonly<TProps>) => {
             const newPartialState = update(prev, props) as Pick<S, K>;
-            if (newPartialState === null)
-                throw new Error('null state not implemented'); // don't know yet what to do here
+            assert(newPartialState !== null, 'null state not implemented'); // don't know yet what to do when false
             this.verifyPartialState(newPartialState as Partial<S>); // Pick<T, ...> can always be converted to Partial<T>. Pick<T, K> is a specific Partial<T>
             return newPartialState;
         });

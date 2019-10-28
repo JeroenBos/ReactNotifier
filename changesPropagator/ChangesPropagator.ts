@@ -3,7 +3,7 @@ import { IChangePropagator, IComponent, BaseProps, BaseState, UNINITIALIZED_ID, 
 import { CommandInstruction } from './../commands/commandInstruction';
 import { Http } from './http';
 import { SerializedType, StateType, isComponentProps, isComponent } from './common';
-import { assert, isDevelopment, assertAreIdentical, groupBy } from 'jbsnorro';
+import { assert, isDevelopment, assertAreIdentical, groupBy, fail, unreachable } from 'jbsnorro';
 
 type StateInfo = any;
 type PropertyChange = (IPropertyChange | ICollectionItemAdded) & ComponentType & { isPropsChange: boolean };
@@ -27,10 +27,8 @@ class Relation implements PartialRelation {
         return this._isComponent;
     }
     public set isComponent(value: boolean | undefined) {
-        if (this._isComponent)
-            throw new Error('isComponent has already been set');
-        if (value === undefined)
-            throw new Error(`You cannot specified 'undefined'`);
+        assert(!this._isComponent, 'isComponent has already been set');
+        assert(value !== undefined, `Invalid argument 'value': 'undefined' was specified`);
         this._isComponent = value;
     }
 
@@ -54,7 +52,7 @@ class Relation implements PartialRelation {
         const component = allComponents.get(this.parentId);
         if (component === undefined) {
             // container hasn't registered yet
-            throw new Error('not implemented');
+            throw fail('not implemented');
         }
         else {
             assert(propertyName in component.props || propertyName in component.state);
@@ -100,7 +98,7 @@ export class ChangesPropagator implements IChangePropagator {
         if (command.commandName != 'mock')
             console.log(`executeCommand: '${command.commandName}'`);
         if (command == null || command.commandName == null || command.commandName == '' || command.viewModelId < UNINITIALIZED_ID || command.eventArgs == null) {
-            throw new Error("Invalid command instruction");
+            throw fail('Invalid command instruction');
         }
         await this.postAndProcess('ExecuteCommand', command);
     }
@@ -152,7 +150,7 @@ export class ChangesPropagator implements IChangePropagator {
                 debugger;
             }
             else {
-                throw new Error('unhandled type of change');
+                throw fail('unhandled type of change');
             }
             return change;
         }).sort((a, b) => a.id - b.id);
@@ -165,7 +163,7 @@ export class ChangesPropagator implements IChangePropagator {
                 const relation = new Relation(change_value.__id, change_propertyName, change.id);
                 this.parents.set(change_value.__id, relation);
                 const parentRelation = this.parents.get(change.id);
-                if ((parentRelation === undefined) !== this.rootIds.includes(change.id)) throw new Error();
+                if ((parentRelation === undefined) !== this.rootIds.includes(change.id)) throw fail();
                 if (parentRelation !== undefined && parentRelation.isComponent === false) {
                     // if the parent is a pojo, this object is a pojo:
                     relation.isComponent = false;
@@ -206,9 +204,7 @@ export class ChangesPropagator implements IChangePropagator {
             //     so 'if the change is on the state of the component' is the same as saying it's not on the parent of the component
 
             const relation = this.parents.get(change.id);
-            if (relation === undefined && !this.rootIds.includes(change.id)) {
-                throw new Error();
-            }
+            assert(!(relation === undefined && !this.rootIds.includes(change.id)));
 
             if (relation === undefined) {
                 // SPEC: if the component has registered it is not dangling
@@ -232,7 +228,7 @@ export class ChangesPropagator implements IChangePropagator {
             // SPEC: if relation.isComponent === false, it is not dangling
             if (relation.isComponent === false)
                 return false;
-            throw new Error('unreachable');
+            throw unreachable();
         }
 
 
@@ -262,7 +258,7 @@ export class ChangesPropagator implements IChangePropagator {
         const changesPerComponent = groupBy(setStateChanges, change => this.getComponentIdOnWhichToDoTheChange(change)).sort((a, b) => a.key - b.key);
         for (const grouping of changesPerComponent) {
             const component = this.components.get(grouping.key);
-            if (component === undefined) throw new Error('not possible');
+            if (component === undefined) throw fail('not possible');
             this.setState(component, grouping.elements);
         }
     }
@@ -347,8 +343,8 @@ export class ChangesPropagator implements IChangePropagator {
     private assertNoAncestorIsObject(id: number) {
         let obj = this.parents.get(id);
         while (obj !== undefined) {
-            if (obj.isComponent === false)
-                throw new Error();
+            assert(obj.isComponent !== false);
+
             obj = this.parents.get(obj.parentId);
         }
     }
@@ -356,19 +352,18 @@ export class ChangesPropagator implements IChangePropagator {
     private setIsComponent(componentId: number): void {
         const relation = this.parents.get(componentId);
         if (relation === undefined) {
-            if (this.rootIds.includes(componentId))
-                return;
-            else
-                throw new Error(`A dangling component was added. Roots must have id=0. Otherwise, add the component to the tree first by ` +
-                    `submitting a change containing '{ __id: ${componentId} }' on any state in the tree`);
+            assert(this.rootIds.includes(componentId), `A dangling component was added. Roots must have id=0. Otherwise, add the component to the tree first by ` +
+                `submitting a change containing '{ __id: ${componentId} }' on any state in the tree`);
+            return;
         }
+
         switch (relation.isComponent) {
             case true:
                 return; // if this is always the case, this method call is redundant
             case undefined:
                 relation.isComponent = true;
             default:
-                throw new Error('The last time this was thrown was because the stateInfo was wrong: ' +
+                assert(false, 'The last time this was thrown was because the stateInfo was wrong: ' +
                     'I registered a component whose parent relation said it wasnt a component, ' +
                     'because it was missing from stateInfo');
         }
@@ -377,21 +372,15 @@ export class ChangesPropagator implements IChangePropagator {
      * This method sets that information.
      */
     private setIsComponentOnChildrenOf(newComponent: IComponent): void {
-        if (newComponent === null || newComponent === undefined)
-            throw new Error('argument error: newComponent == null');
-        if (newComponent.stateInfo === undefined)
-            throw new Error(`argument error: newComponent with id = ${newComponent.__id} is missing stateInfo`);
+        assert(newComponent != null, 'argument error: newComponent == null');
+        assert(newComponent.stateInfo !== undefined, `argument error: newComponent with id = ${newComponent.__id} is missing stateInfo`);
 
         const childObjectIds = [];
         for (const danglingStateId of this.danglingStates.keys()) {
             const relation = this.parents.get(danglingStateId);
             if (relation === undefined) {
-                if (this.rootIds.includes(danglingStateId))
-                    continue;
-                else {
-                    debugger;
-                    throw new Error();
-                }
+                assert(this.rootIds.includes(danglingStateId));
+                continue;
             } else if (relation.parentId === newComponent.__id) {
                 const isComponent = relation.propertyName in newComponent.stateInfo;
                 if (relation.isComponent !== undefined && relation.isComponent !== isComponent) {
