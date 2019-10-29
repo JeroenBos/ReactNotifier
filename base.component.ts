@@ -6,6 +6,7 @@ import { identifiers } from './IoC/keys';
 import { UncheckedOmit, assert } from 'jbsnorro';
 import { TypeSystem, PrimitiveTypes } from 'jbsnorro-typesafety';
 import { IsNotNever, NotNeverValues } from 'jbsnorro-typesafety/dist/types/typeHelper';
+import { isEqual } from 'lodash';
 
 
 // The state info attribute has the following information:
@@ -153,7 +154,7 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
      */
     protected abstract getInitialState(props: Readonly<TProps>): Readonly<S>;
     UNSAFE_componentWillReceiveProps(nextProps: Readonly<TProps>) {
-        if (this.props != nextProps)
+        if (!isEqual(this.props, nextProps))
             this.setState(() => this.getInitialState(nextProps));
     }
     componentDidMount() {
