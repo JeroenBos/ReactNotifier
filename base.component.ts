@@ -1,13 +1,12 @@
 import * as React from 'react';
-import { NotNeverValues, IsNotNever, assert as assertT } from 'jbsnorro-typesafety/typeHelper';
-import { BaseState, BaseProps, IComponent, isReference } from './base.interfaces';
+import { GetKey } from 'jbsnorro-typesafety';
+import { BaseState, BaseProps, IComponent } from './base.interfaces';
 import container from './IoC/container';
-import { TempIdProvider } from './tempIdProvider';
 import { identifiers } from './IoC/keys';
-import { ResettableContainer, UncheckedOmit, assert } from 'jbsnorro';
-import { IsExact } from 'jbsnorro-typesafety';
-
-
+import { UncheckedOmit, assert } from 'jbsnorro';
+import { TypeSystem, PrimitiveTypes } from 'jbsnorro-typesafety';
+import { IsNotNever, NotNeverValues } from 'jbsnorro-typesafety/dist/types/typeHelper';
+import { isEqual } from 'lodash';
 
 
 // The state info attribute has the following information:
@@ -56,7 +55,7 @@ export type StateInfoLocalHelper<P, S> =
     );
 
 // export type InitialState<S> = { readonly [K in keyof S]: S[K] | MySpeci
-export abstract class BaseComponent<TProps extends BaseProps, S extends BaseState>
+export abstract class BaseComponent<TProps extends BaseProps, S extends BaseState, CheckableTypes extends PrimitiveTypes>
     extends React.Component<TProps, S>
     implements IComponent<S, TProps> {
 
@@ -99,20 +98,30 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
     // The absence of a function indicates that they're all props, i.e. that they should all be set via the setState of the current component.
     // is that different from a function returning false?
 
+
+    private readonly verifyState: typeSystemAssertion<S>;
+    private readonly verifyPartialState: typeSystemAssertionPartial<S>;
     public constructor(props: TProps,
-        private readonly verifyProps: typeSystemAssertion<TProps>,
-        private readonly verifyState: typeSystemAssertion<S>,
-        private readonly verifyPartialState: typeSystemAssertionPartial<S>
+        typesystem: TypeSystem<CheckableTypes>,
+        propsTypeKey: GetKey<TProps, CheckableTypes>,
+        stateTypeKey: GetKey<S, CheckableTypes>,
     ) {
         super(props);
+        assert(props != undefined, `Argument 'props' is null or undefined`);
+        assert(typesystem != undefined, `Argument 'typesystem' is null or undefined`);
+        assert(propsTypeKey != undefined, `Argument 'propsTypeKey' is null or undefined`);
+        assert(stateTypeKey != undefined, `Argument 'stateTypeKey' is null or undefined`);
+        assert(typesystem.hasDescription(propsTypeKey), `Argument 'propsTypeKey':'${propsTypeKey}' is not a key in the specified type system`);
+        assert(typesystem.hasDescription(stateTypeKey), `Argument 'propsTypeKey':'${stateTypeKey}' is not a key in the specified type system`);
+        assert(this.stateInfo !== undefined, `'state info' is missing. You need to override it as getter: field assignment is too late'`);
+        assert(this.getInitialState !== undefined, `'getInitialState' is missing. You need to override it: assignment is too late`);
 
-        if (verifyProps == undefined) throw new Error(`Argument 'verifyProps' is null or undefined`);
-        if (verifyState == undefined) throw new Error(`Argument 'verifyState' is null or undefined`);
-        if (verifyPartialState == undefined) throw new Error(`Argument 'verifyPartialState' is null or undefined`);
-        if (this._stateInfo === undefined) throw new Error('state info is missing. You need to override it as getter: field assignment is too late');
+        const verifyProps = typesystem.assertF(propsTypeKey as any);
+        this.verifyState = typesystem.assertF(stateTypeKey as any);
+        this.verifyPartialState = typesystem.isPartialF(stateTypeKey as any);
 
-        this.verifyProps(props);
-        this.state = this._defaultState;
+        verifyProps(props);
+        this.state = this.getInitialState(props);
         if (this.state === undefined)
             console.warn('state was undefined. You need to override it as getter: field assignment is too late');
         this.state = this.server.register(this) as Readonly<S>; // server.register merges any changes with the default state
@@ -134,14 +143,6 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
         }
     }
 
-    /** The purpose of this property is to allow the ctor to access the abstract property 'defaultState'. */
-    private get _defaultState(): Readonly<S> {
-        return this.getInitialState(this.props);;
-    }
-    /** The purpose of this property is to allow the ctor to access the abstract property 'stateInfo'. */
-    private get _stateInfo(): SimpleStateInfo<TProps> {
-        return this.stateInfo;
-    }
     public isComponent(propertyName: string | number): boolean {
         // you should return false for all viewmodels (i.e. non-component) children
         return true;
@@ -153,7 +154,7 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
      */
     protected abstract getInitialState(props: Readonly<TProps>): Readonly<S>;
     UNSAFE_componentWillReceiveProps(nextProps: Readonly<TProps>) {
-        if (this.props !== nextProps)
+        if (!isEqual(this.props, nextProps))
             this.setState(() => this.getInitialState(nextProps));
     }
     componentDidMount() {
@@ -162,13 +163,13 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
         this.server.unregister(this);
     }
 
+    /* DO NOT USE. Set state via the changes propagator instead. */
     public setState<K extends keyof S>(
         update: (prev: Readonly<S>, props: Readonly<TProps>) => (Pick<S, K> | S | null)
     ) {
         super.setState((prev: Readonly<S>, props: Readonly<TProps>) => {
             const newPartialState = update(prev, props) as Pick<S, K>;
-            if (newPartialState === null)
-                throw new Error('null state not implemented'); // don't know yet what to do here
+            assert(newPartialState !== null, 'null state not implemented'); // don't know yet what to do when false
             this.verifyPartialState(newPartialState as Partial<S>); // Pick<T, ...> can always be converted to Partial<T>. Pick<T, K> is a specific Partial<T>
             return newPartialState;
         });

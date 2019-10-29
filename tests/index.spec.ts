@@ -23,3 +23,5 @@ import './case0/0.spec';
 import './case1/1.spec';
 import './case2/2.spec';
 import './case3/changepropagator.spec';
+import './case3/commandmanager.spec';
+import './conditionast.spec';

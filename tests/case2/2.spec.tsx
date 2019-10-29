@@ -5,7 +5,7 @@ import 'jsdom-global/register';
 import { AppComponent, AppState } from './2.app.component';
 import { AppId, CommandManagerId } from '../../base.interfaces';
 import { identifiers } from '../../IoC/keys';
-import { ReactWrapper, wraps } from '../enzyme.wrapper';
+import { ReactWrapper, wraps } from '../../enzyme.wrapper';
 import { ITestResponse, MockCommandInstruction } from '../../IoC/defaults';
 import { mainWindowRefResponse, mainWindowInitResponseS } from '../responses';
 import { MainWindowState, MainWindowProps, MainWindowComponent } from './2.mainwindow.component';
@@ -44,7 +44,7 @@ describe('2. App ', () => {
             const app = mount<AppComponent>(<AppComponent __id={AppId} />);
             await container.server.executeCommand(MockCommandInstruction);
             app.update();
-            const window = app.childAt(0);
+            const window: any = app.childAt(0);
             if (!wraps<MainWindowComponent>(window, 'MainWindowComponent')) throw new Error('MainWindow expected');
             appState = app.instance().state;
             windowProps = window.props();

@@ -1,11 +1,12 @@
 import * as React from 'react';
 import { BaseProps, BaseState } from '../../base.interfaces';
-import { typesystem } from './0.typesystem';
+import { typesystem, CheckableTypes0 } from './0.typesystem';
 import { BaseComponent, SimpleStateInfo } from '../../base.component';
+import { PrimitiveTypes } from 'jbsnorro-typesafety';
 
-export class AppComponent extends BaseComponent<AppProps, AppState> {
+export class AppComponent extends BaseComponent<AppProps, AppState, CheckableTypes0 & PrimitiveTypes> {
     constructor(props: AppProps) {
-        super(props, typesystem.verifyF('AppProps'), typesystem.verifyF('AppState'), typesystem.assertPartialF('AppState'));
+        super(props, typesystem, 'AppProps', 'AppState');
     }
     protected getInitialState(): Readonly<AppState> {
         return {

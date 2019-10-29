@@ -24,18 +24,6 @@ export class TypedContainer extends ResettableContainer<TServices> implements TS
     get typesystem(): TypeSystem<any> {
         return this.getProvider(identifiers.typesystem).provide();
     }
-    get documentMeasurer() {
-        return this.getProvider(identifiers.documentMeasurer).provide();
-    }
-    get focusManager() {
-        return this.getProvider(identifiers.focusManager).provide();
-    }
-
-
-    resetAll() {
-        assert(this.isBound(identifiers.rootIds), 'rootIds must be bound before calling resetAll');
-        super.resetAll();
-    }
 }
 
 export default new TypedContainer(identifiers);

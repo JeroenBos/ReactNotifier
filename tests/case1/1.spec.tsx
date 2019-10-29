@@ -5,7 +5,7 @@ import 'jsdom-global/register';
 import { AppComponent, AppState } from './1.app.component';
 import { AppId, CommandManagerId } from '../../base.interfaces';
 import { identifiers } from '../../IoC/keys';
-import { ReactWrapper, wraps } from '../enzyme.wrapper';
+import { ReactWrapper, wraps } from '../../enzyme.wrapper';
 import { ITestResponse, MockCommandInstruction } from '../../IoC/defaults';
 import { mainWindowRefResponse, mainWindowInitResponseS } from '../responses';
 import { MainWindowState, MainWindowProps, MainWindowComponent } from './1.mainwindow.component';

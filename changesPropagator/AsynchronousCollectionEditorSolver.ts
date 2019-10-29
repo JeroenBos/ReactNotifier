@@ -1,7 +1,7 @@
 ﻿import 'rxjs/add/operator/toPromise';
 import { SerializedComponentProps, SerializedType, AdmissiblePrimitiveType, StateType, isComponentProps, isComponent } from './common';
 import { IComponent, UNINITIALIZED_ID } from '../base.interfaces';
-import { assert } from 'jbsnorro';
+import { assert, fail} from 'jbsnorro';
 
 type Command = any;
 
@@ -100,7 +100,7 @@ export class AsynchronousCollectionEditorSolver {
                 if (!isComponent(component)) {
                     const verb = addOrRemove ? 'inserted' : 'removed';
                     const preposition = addOrRemove ? 'into' : 'from';
-                    throw new Error(`The server ${verb} a component item ${preposition} into a collection, but the client ${verb} a non-component ${preposition} that collection`);
+                    throw assert(false, `The server ${verb} a component item ${preposition} into a collection, but the client ${verb} a non-component ${preposition} that collection`);
                 }
 
                 items.splice(clientsideIndex, 1);
@@ -155,6 +155,6 @@ export class AsynchronousCollectionEditorSolver {
     }
 
     private refetch(container: IComponent, collectionName: string): boolean {
-        throw new Error('Not implemented. Refetch collection from server'); // the collection has been modified such that the change from the server could not be incorporated
+        throw fail('Not implemented. Refetch collection from server'); // the collection has been modified such that the change from the server could not be incorporated
     }
 }

@@ -4,8 +4,6 @@ import { TempIdProvider } from '../tempIdProvider';
 import { Http } from '../changesPropagator/http';
 import { TypeSystem } from 'jbsnorro-typesafety';
 import { ITestResponse } from './defaults';
-import { IDocumentMeasurer } from './IDocumentMeasurer';
-import { IFocusManager } from './IFocusManager';
 
 
 // compile-time known services:
@@ -17,11 +15,11 @@ export interface TServices {
     readonly http: Http;
     readonly responses: ITestResponse[];
     readonly typesystem: TypeSystem<any>;
-    readonly documentMeasurer: IDocumentMeasurer;
-    readonly focusManager: IFocusManager;
 }
 
-export const identifiers: Readonly<{ [K in keyof TServices]: K }> = Object.freeze({
+export type TIdentifiers<TServices> = Readonly<{ [K in keyof TServices]: K; }>;
+
+export const identifiers: TIdentifiers<TServices> = Object.freeze({
     rootIds: 'rootIds',
     commandManager: 'commandManager',
     server: 'server',
@@ -29,6 +27,4 @@ export const identifiers: Readonly<{ [K in keyof TServices]: K }> = Object.freez
     http: 'http',
     responses: 'responses',
     typesystem: 'typesystem',
-    documentMeasurer: 'documentMeasurer',
-    focusManager: 'focusManager',
 });
