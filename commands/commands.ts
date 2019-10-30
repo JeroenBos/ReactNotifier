@@ -6,17 +6,17 @@ import { And, OptionalKeys } from 'jbsnorro-typesafety/dist/types/typeHelper';
 
 type OptionalParameters<TSender, TParameter, TState, TReturn> =
     And<[IsExact<TParameter, void>, IsExact<TState, void>]> extends true ? (sender: TSender) => TReturn
-    : IsExact<TState, void> extends true ? (sender: TSender, parameter_e: TParameter) => TReturn
-    : (sender: TSender, parameter_e: TParameter, state: TState) => TReturn;
+    : IsExact<TState, void> extends true ? (sender: TSender, args_e: TParameter) => TReturn
+    : (sender: TSender, args_e: TParameter, state: TState) => TReturn;
 export interface CommandOptimization<TSender = any, TParameter = void, TState = void> {
 
     /**
-     * @param {(InputEvent | CommandParameter)} parameter_e Means parameter or e, i.e. e (=InputEvent) is regarded as parameter.
+     * @param {(InputEvent | CommandParameter)} args_e Means parameter or e, i.e. e (=InputEvent) is regarded as parameter.
      */
     readonly canExecute: OptionalParameters<TSender, TParameter, TState, OptimizationCanExecute>;
     /**
      * Returns the new state with the effect of this command.
-     * @param {(InputEvent | CommandParameter)} parameter_e Means parameter or e, i.e. e (=InputEvent) is regarded as parameter
+     * @param {(InputEvent | CommandParameter)} args_e Means parameter or e, i.e. e (=InputEvent) is regarded as parameter
      */
     readonly execute: OptionalParameters<TSender, TParameter, TState, void>;
 }
@@ -78,7 +78,10 @@ export enum OptimizationCanExecute {
     True = ServersideOnly + ClientsideOnly,
 }
 
-export type CommandStateFactory<TSender = any, TParameter = undefined, TState = undefined> = (sender: TSender, parameter_e: TParameter) => TState;
+export type CommandStateFactory<TSender = any, TParameter = undefined, TState = undefined> =
+    IsExact<TParameter, void> extends true
+    ? (sender: TSender) => TState
+    : (sender: TSender, parameter_e: TParameter) => TState;
 export const defaultCommandStateFactory: CommandStateFactory<any, any, undefined> = () => undefined;
 
 
