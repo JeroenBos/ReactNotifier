@@ -1,5 +1,5 @@
 ﻿import 'rxjs/add/operator/toPromise';
-import { CommandArgs } from './inputTypes';
+import { CommandState } from './inputTypes';
 
 export class CommandInstruction {
     public readonly eventArgs: Exclude<any, null | undefined>;
@@ -7,7 +7,7 @@ export class CommandInstruction {
     public constructor(
         public readonly commandName: string,
         public readonly viewModelId: number,
-        eventArgs?: CommandArgs) {
+        eventArgs?: CommandState) {
 
         this.eventArgs = eventArgs || 'null';
     }

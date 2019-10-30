@@ -1,11 +1,12 @@
 ﻿import 'rxjs/add/operator/toPromise';
 import { BaseState, ICommandManager, BaseProps, CommandManagerId, IComponent, IChangePropagator, Sender } from '../base.interfaces';
 import { CommandInstruction } from './commandInstruction';
-import { CommandBindingWithCommandName, CommandOptimization, EventToCommandPropagation, DefaultEventArgPropagations, CommandViewModel, OptimizationCanExecute } from './commands';
+import { CommandBindingWithCommandName, CommandOptimization, CommandStateFactory, CommandViewModel as _CommandViewModel, OptimizationCanExecute } from './commands';
 import { ConditionAST, FlagDelegate } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
-import { InputEvent, CommandArgs } from './inputTypes';
+import { InputEvent, CommandState, CommandParameter } from './inputTypes';
 import { SimpleStateInfo } from '../base.component';
+type CommandViewModel = _CommandViewModel<Sender, CommandParameter, CommandState>;
 
 
 export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerState> {
@@ -70,7 +71,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         }
         this.commands[commandName].optimization = command;
     }
-    public setEventArgPropagation(commandName: string, propagation: EventToCommandPropagation): void {
+    public setEventArgPropagation(commandName: string, propagation: CommandStateFactory): void {
         if (commandName == null || commandName == '') {
             throw new Error('Invalid command name specified');
         }
@@ -168,7 +169,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         const commandNames: string[] = [];
 
         this.inputBindings[inputBinding].forEach((binding: CommandBindingWithCommandName) => {
-            const args = binding.commandName in this.commands ? this.getEventArgs(this.commands[binding.commandName], sender, e) : undefined;
+            const args = binding.commandName in this.commands ? this.getCommandArgs(this.commands[binding.commandName], sender, e) : undefined;
             if (binding.condition.toBoolean(sender, args)) {
                 commandNames.push(binding.commandName);
             }
@@ -177,19 +178,21 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return commandNames;
     }
 
-    private executeCommandIfPossible(commandName: string, sender: Sender, e?: InputEvent): boolean {
+
+    // parameter is the event in case this is a bound command, otherwise anything else. It is used to compute the command state, and that's it
+    private executeCommandIfPossible(commandName: string, sender: Sender, parameter?: CommandParameter): boolean {
         if (!this.hasCommand(commandName)) {
             console.warn(`The command '${commandName}' does not exist`);
             return false;
         }
 
         const command = this.commands[commandName];
-        const args = this.getEventArgs(command, sender, e);
+        const args = this.getCommandArgs(command, sender, parameter);
         if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, args)) {
             return false;
         }
 
-        const sides = command.optimization == undefined ? OptimizationCanExecute.ServersideOnly : command.optimization.canExecute(sender, e);
+        const sides = command.optimization == undefined ? OptimizationCanExecute.ServersideOnly : command.optimization.canExecute(sender, parameter, args);
 
         if ((sides & OptimizationCanExecute.ServersideOnly) != 0) {
             if (command.__id === undefined)
@@ -203,24 +206,19 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         }
 
         if ((sides & OptimizationCanExecute.ClientsideOnly) != 0) {
-            command.optimization!.execute(sender, e);
+            command.optimization!.execute(sender, parameter, args);
         }
 
         return sides != 0;
     }
 
-    private getEventArgs(command: CommandViewModel, sender: Sender, e?: InputEvent): CommandArgs {
+    private getCommandArgs(command: CommandViewModel, sender: Sender, e: CommandParameter): CommandState | undefined {
         const propagation = command.propagation;
         if (propagation === undefined) {
             return undefined;
         }
 
-        if (DefaultEventArgPropagations.IsInstanceOf(propagation)) {
-            return DefaultEventArgPropagations.GetDefault(propagation)(sender, e);
-        }
-        else {
-            return propagation(sender, e);
-        }
+        return propagation(sender, e);
     }
 
 
