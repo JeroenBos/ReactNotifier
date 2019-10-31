@@ -38,9 +38,7 @@ const sharedConfig = {
         tls: 'empty'
     },
     plugins: [
-        new CleanWebpackPlugin(['dist'], {
-            root: __dirname + '//..' // see https://github.com/johnagan/clean-webpack-plugin/issues/76#issuecomment-369813202
-        })
+        new CleanWebpackPlugin(['dist'])
     ],
     watchOptions: {
         aggregateTimeout: 0
