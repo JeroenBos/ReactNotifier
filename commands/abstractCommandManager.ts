@@ -1,5 +1,5 @@
 ﻿import 'rxjs/add/operator/toPromise';
-import { BaseState, ICommandManager, BaseProps, CommandManagerId, IComponent, IChangePropagator, Sender } from '../base.interfaces';
+import { BaseState, ICommandManager, BaseProps, CommandManagerId, IComponent, IChangePropagator, Sender, isReference } from '../base.interfaces';
 import { CommandInstruction } from './commandInstruction';
 import { CommandBindingWithCommandName, CommandOptimization, CommandStateFactory, CommandViewModel as _CommandViewModel, OptimizationCanExecute } from './commands';
 import { ConditionAST, FlagDelegate } from './ConditionAST'
@@ -9,7 +9,7 @@ import { SimpleStateInfo } from '../base.component';
 type CommandViewModel = _CommandViewModel<Sender, CommandParameter, CommandState>;
 
 
-export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerState> {
+export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerProps, CommandManagerState> {
     private _state: CommandManagerState;
     public get state(): CommandManagerState {
         return this._state;
@@ -101,22 +101,22 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     }
 
     /**
-       * 
-       * @param sender
-       * @param commandName
-       * @param e Optional event args, which is consumed if specified (i.e. propagation is stopped).
-       */
-    public executeCommandByName(commandName: string, sender: Sender, e?: InputEvent): void {
+      * 
+      * @param e The argument to the command. Usually the event args, whose propagation can be stopped by the client side command.
+      */
+    public executeCommandByName(commandName: string, sender: Sender, e?: CommandParameter): void {
         const s = sender as { __id?: number };
         if (s.__id === undefined && this.commands[commandName] !== undefined && this.commands[commandName].optimization === undefined) {
             throw new Error('Cannot send a command to the server without a sender.id');
         }
 
-        const executed = this.executeCommandIfPossible(commandName, s, e);
+        const executed = this.executeByNameIfPossible(commandName, s, e);
         if (!executed && this.hasCommand(commandName)) {
             console.warn(`The command '${commandName}' cannot execute on '${Object.getPrototypeOf(s).constructor.name}'(id=${s.__id})`);
         }
     }
+    // public execute<TSender, TParameter, TState>(command: _CommandViewModel<TSender, TParameter, TState>, sender: TSender, parameter: TParameter) {
+    // }
     public handleMouseMove(sender: Sender, e: React.MouseEvent): void {
 
         this.handle(CanonicalInputBinding.fromMouseMoveEvent(e), sender, e);
@@ -149,7 +149,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         for (let i = 0; i < commandNames.length; i++) {
 
-            const executed = this.executeCommandIfPossible(commandNames[0], sender, e);
+            const executed = this.executeByNameIfPossible(commandNames[0], sender, e);
             if (executed) {
                 e.stopPropagation();
                 // decide here whether to invoke all executable bound commands, or merely the first one, or dependent on properties of InputEvent 
@@ -178,15 +178,21 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return commandNames;
     }
 
-
-    // parameter is the event in case this is a bound command, otherwise anything else. It is used to compute the command state, and that's it
-    private executeCommandIfPossible(commandName: string, sender: Sender, parameter?: CommandParameter): boolean {
+    public executeByNameIfPossible(commandName: string, sender: Sender, parameter: CommandParameter): boolean {
         if (!this.hasCommand(commandName)) {
             console.warn(`The command '${commandName}' does not exist`);
             return false;
         }
-
         const command = this.commands[commandName];
+        return this.executeIfPossible(command, sender, parameter);
+    }
+
+    // parameter is the event in case this is a bound command, otherwise anything else. It is used to compute the command state, and that's it
+    public executeIfPossible<TSender, TParameter, TState>(
+        command: _CommandViewModel<TSender, TParameter, TState>,
+        sender: TSender,
+        parameter: TParameter
+    ): boolean {
         const args = this.getCommandArgs(command, sender, parameter);
         if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, args)) {
             return false;
@@ -196,9 +202,9 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         if ((sides & OptimizationCanExecute.ServersideOnly) != 0) {
             if (command.__id === undefined)
-                console.warn(`Command '${commandName}' is not known at the server`);
+                console.warn(`Command '${command.name}' is not known at the server`);
             else {
-                if (sender === null || !('__id' in sender))
+                if (!isReference(sender))
                     throw new Error('Cannot send a command to the server without a sender.id');
 
                 this.server.executeCommand(new CommandInstruction(command.name, sender.__id, args));
@@ -212,10 +218,14 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return sides != 0;
     }
 
-    private getCommandArgs(command: CommandViewModel, sender: Sender, e: CommandParameter): CommandState | undefined {
+    private getCommandArgs<TSender, TParameter, TCommandState>(
+        command: _CommandViewModel<TSender, TParameter, TCommandState>,
+        sender: TSender,
+        e: TParameter
+    ): TCommandState {
         const propagation = command.propagation;
         if (propagation === undefined) {
-            return undefined;
+            return undefined!;
         }
 
         return propagation(sender, e);

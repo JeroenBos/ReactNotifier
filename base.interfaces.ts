@@ -1,6 +1,6 @@
 import { InputEvent } from './commands/inputTypes';
 import { CommandInstruction } from './commands/commandInstruction';
-import { CommandManagerState } from './commands/abstractCommandManager';
+import { CommandManagerState, CommandManagerProps } from './commands/abstractCommandManager';
 import { StateType } from './changesPropagator/common';
 import { SimpleStateInfo } from './base.component';
 
@@ -16,16 +16,16 @@ export function isReference(obj: any): obj is { __id: number } {
     return obj != null && typeof obj == 'object' && '__id' in obj;
 }
 
-export interface IComponent<TState extends BaseState = BaseState, TProps extends BaseProps = BaseProps> {
-    state: Readonly<TState>;
-    props: Readonly<TProps>;
+export interface IComponent<P extends BaseProps = BaseProps, S extends BaseState = BaseState> {
+    state: Readonly<S>;
+    props: Readonly<P>;
     readonly __id: number;
-    setState<KState extends keyof TState>(update: (prev: Readonly<TState>, props: Readonly<BaseProps>) => (Pick<TState, KState> | TState | null)): void;
+    setState<KState extends keyof S>(update: (prev: Readonly<S>, props: Readonly<P>) => (Pick<S, KState> | S | null)): void;
     assertIsValidState(item: any, requireAll: boolean): void;
     /** Has information about which properties on a component are state, and which are props. */
     // actually: while debuggin I notice that this state is being used for setting the isComponent boolean in a relation in the changes propagator
     // so it seems to indicate more whether it is a component than whether it's state or props?
-    readonly stateInfo: SimpleStateInfo<TProps>;
+    readonly stateInfo: SimpleStateInfo<P>;
     isComponent(propertyName: string | number): boolean;
 }
 export namespace IComponent {
@@ -43,7 +43,7 @@ export const CommandManagerId = 1;
 /** null can be e.g. when sent from the window. */
 export type Sender = Readonly<{ __id: number; } | Object> | null; // apparently this is not the same as Readonly<{ __id?: number; }>;
 
-export interface ICommandManager extends IComponent<CommandManagerState> {
+export interface ICommandManager extends IComponent<CommandManagerProps, CommandManagerState> {
     handleMouseMove(sender: Sender, e: React.MouseEvent): void;
     handleMouseClick(sender: Sender, e: React.MouseEvent): void;
     handleMouseDown(sender: Sender, e: React.MouseEvent): void;

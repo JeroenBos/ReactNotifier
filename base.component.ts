@@ -57,7 +57,7 @@ export type StateInfoLocalHelper<P, S> =
 // export type InitialState<S> = { readonly [K in keyof S]: S[K] | MySpeci
 export abstract class BaseComponent<TProps extends BaseProps, S extends BaseState, CheckableTypes extends PrimitiveTypes>
     extends React.Component<TProps, S>
-    implements IComponent<S, TProps> {
+    implements IComponent<TProps, S> {
 
     /*@inject(IoC.identifiers.server) private readonly serverProvider!: IProvider<ChangesPropagator>;
     @inject(IoC.identifiers.commandManager) private readonly commandManagerProvider!: IProvider<AbstractCommandManager>;
