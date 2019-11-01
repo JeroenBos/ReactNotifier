@@ -3,13 +3,23 @@ import { CanonicalInputBinding } from './inputBindingParser';
 import { Booleanable } from './ConditionAST'
 import { IsExact, TypeSystem } from 'jbsnorro-typesafety';
 import { And, OptionalKeys } from 'jbsnorro-typesafety/dist/types/typeHelper';
+import { IComponent, BaseState, BaseProps } from '../base.interfaces';
+
+export type Reducer<K extends keyof S, S, P> = (prevState: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null);
+
+export type OptimizationReturnType<C extends IComponent<P, S>, K extends keyof S, P extends BaseProps = C['props'], S extends BaseState = C['state']> = {
+    serverside: boolean,
+    reducer?: Reducer<K, S, P>,
+    component?: C,
+};
 
 type OptionalParameters<TSender, TParameter, TState, TReturn> =
     And<[IsExact<TParameter, void>, IsExact<TState, void>]> extends true ? (sender: TSender) => TReturn
     : IsExact<TState, void> extends true ? (sender: TSender, args_e: TParameter) => TReturn
     : (sender: TSender, args_e: TParameter, state: TState) => TReturn;
-export interface CommandOptimization<TSender = any, TParameter = void, TState = void> {
 
+
+export interface CommandOptimization<TSender = any, TParameter = void, TState = void> {
     /**
      * @param {(InputEvent | CommandParameter)} args_e Means parameter or e, i.e. e (=InputEvent) is regarded as parameter.
      */

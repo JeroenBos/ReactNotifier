@@ -6,6 +6,7 @@ import { ConditionAST, FlagDelegate } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
 import { InputEvent, CommandState, CommandParameter } from './inputTypes';
 import { SimpleStateInfo } from '../base.component';
+
 type CommandViewModel = _CommandViewModel<Sender, CommandParameter, CommandState>;
 
 
@@ -24,6 +25,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         if (verifyState == undefined) throw new Error(`Argument 'verifyState' is null or undefined`);
         if (verifyPartialState == undefined) throw new Error(`Argument 'verifyPartialState' is null or undefined`);
 
+        (this as any).superSetState = this.setState;
         this.verifyProps(props);
 
         this._state = this.getInitialState(props);
