@@ -4,6 +4,7 @@ import { CommandInstruction } from './../commands/commandInstruction';
 import { Http } from './http';
 import { SerializedType, StateType, isComponentProps, isComponent } from './common';
 import { assert, isDevelopment, assertAreIdentical, groupBy, fail, unreachable } from 'jbsnorro';
+import { superSetStateBaseComponent } from '../base.component';
 
 type StateInfo = any;
 type PropertyChange = (IPropertyChange | ICollectionItemAdded) & ComponentType & { isPropsChange: boolean };
@@ -460,7 +461,8 @@ export class ChangesPropagator implements IChangePropagator {
     /** Does a react setState given the specified changes. */
     private setState(component: IComponent, changes: (IPropertyChange | ICollectionItemAdded)[]): void {
         //TODO: detect merge conflicts due to async serverside and clientside commands
-        component.setState(oldState => {
+        const _component = component as any as superSetStateBaseComponent<any, any>;
+        _component.superSetState((oldState: any) => {
             const result = this.toState(changes, component.__id, oldState);
             try {
                 component.assertIsValidState(result, false);

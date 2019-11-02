@@ -1,16 +1,37 @@
 ﻿import 'rxjs/add/operator/toPromise';
 import { CanonicalInputBinding } from './inputBindingParser';
 import { Booleanable } from './ConditionAST'
-import { InputEvent, CommandArgs } from './inputTypes';
-import { BaseState, Sender } from '../base.interfaces';
+import { IsExact, TypeSystem } from 'jbsnorro-typesafety';
+import { And, OptionalKeys } from 'jbsnorro-typesafety/dist/types/typeHelper';
+import { IComponent, BaseState, BaseProps } from '../base.interfaces';
 
-export interface CommandOptimization {
-    canExecute(sender: Sender, e: InputEvent | undefined): OptimizationCanExecute;
-    /** Returns the new state with the effect of this command. */
-    execute(sender: Sender, e: InputEvent | undefined): void;
+export type Reducer<K extends keyof S, S, P> = (prevState: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null);
+
+export type OptimizationReturnType<C extends IComponent<P, S>, K extends keyof S, P extends BaseProps = C['props'], S extends BaseState = C['state']> = {
+    serverside: boolean,
+    reducer?: Reducer<K, S, P>,
+    component?: C,
+};
+
+type OptionalParameters<TSender, TParameter, TState, TReturn> =
+    And<[IsExact<TParameter, void>, IsExact<TState, void>]> extends true ? (sender: TSender) => TReturn
+    : IsExact<TState, void> extends true ? (sender: TSender, args_e: TParameter) => TReturn
+    : (sender: TSender, args_e: TParameter, state: TState) => TReturn;
+
+
+export interface CommandOptimization<TSender = any, TParameter = void, TState = void> {
+    /**
+     * @param {(InputEvent | CommandParameter)} args_e Means parameter or e, i.e. e (=InputEvent) is regarded as parameter.
+     */
+    readonly canExecute: OptionalParameters<TSender, TParameter, TState, OptimizationCanExecute>;
+    /**
+     * Returns the new state with the effect of this command.
+     * @param {(InputEvent | CommandParameter)} args_e Means parameter or e, i.e. e (=InputEvent) is regarded as parameter
+     */
+    readonly execute: OptionalParameters<TSender, TParameter, TState, void>;
 }
 
-export interface CommandViewModel {
+export interface CommandViewModel<TSender = any, TParameter = void, TState = void> {
     /**
      * The id of this command. Presence means presence of a serverside complement, and vice versa.
      */
@@ -29,14 +50,16 @@ export interface CommandViewModel {
      * otherwise they're run both: either the optimization is expected to produce the same or partially same results as by the server,
      * or the optimization can loading indicators.
      */
-    optimization?: CommandOptimization;
+    optimization?: CommandOptimization<TSender, TParameter, TState>;
     /**
-     * An object/function that extracts command arguments from the event arg. 
-     * The command args are serialized and passed to the serverside command, but also to the optimization.
+     * An object/function that extracts command state from the event arg. 
+     * The command state is serialized and passed to the serverside command, but also to the optimization.
      */
-    propagation?: EventToCommandPropagation;
+    propagation?: IsExact<TState, void> extends true ? undefined : CommandStateFactory<TSender, TParameter, TState>;
 }
 
+export type OptimizedCommandViewModel<TSender = any, TParameter = void, TState = void> =
+    MakeRequired<CommandViewModel<TSender, TParameter, TState>, 'optimization'>;
 
 export class CommandBinding {
     public constructor(
@@ -64,19 +87,12 @@ export enum OptimizationCanExecute {
      * The input that trigged this command will be consumed. */
     True = ServersideOnly + ClientsideOnly,
 }
-export enum DefaultEventArgPropagations {
 
-}
-export type EventToCommandPropagation = DefaultEventArgPropagations | ExplicitEventArgPropgation;
-export namespace DefaultEventArgPropagations {
-    export function IsInstanceOf(a: any): a is DefaultEventArgPropagations {
-        return GetDefault(a) !== undefined;
-    }
-    export function GetDefault(a: DefaultEventArgPropagations): ExplicitEventArgPropgation {
-        switch (a) {
-            default:
-                return <any>undefined;
-        }
-    }
-}
-export type ExplicitEventArgPropgation = (sender: Sender, clientsideEventArgs: InputEvent | undefined) => CommandArgs;
+export type CommandStateFactory<TSender = any, TParameter = undefined, TState = undefined> =
+    IsExact<TParameter, void> extends true
+    ? (sender: TSender) => TState
+    : (sender: TSender, parameter_e: TParameter) => TState;
+export const defaultCommandStateFactory: CommandStateFactory<any, any, undefined> = () => undefined;
+
+
+export type MakeRequired<T, K extends OptionalKeys<T>> = T & { [k in K]-?: Exclude<T[K], undefined> }

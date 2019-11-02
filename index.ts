@@ -9,7 +9,7 @@ export { Http } from './changesPropagator/http';
 export { ChangesPropagator, IResponse, IPropertyChange } from "./changesPropagator/ChangesPropagator";
 export { AbstractCommandManager, CommandManagerProps, CommandManagerState } from './commands/abstractCommandManager';
 export { CommandInstruction } from './commands/commandInstruction';
-export { CommandViewModel } from './commands/commands';
+export { CommandViewModel, Reducer, CommandOptimization, CommandStateFactory } from './commands/commands';
 export { FlagDelegate } from './commands/ConditionAST';
 export { CanonicalInputBinding } from './commands/inputBindingParser';
 export { InputEvent } from './commands/inputTypes';

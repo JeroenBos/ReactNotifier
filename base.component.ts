@@ -57,7 +57,7 @@ export type StateInfoLocalHelper<P, S> =
 // export type InitialState<S> = { readonly [K in keyof S]: S[K] | MySpeci
 export abstract class BaseComponent<TProps extends BaseProps, S extends BaseState, CheckableTypes extends PrimitiveTypes>
     extends React.Component<TProps, S>
-    implements IComponent<S, TProps> {
+    implements IComponent<TProps, S> {
 
     /*@inject(IoC.identifiers.server) private readonly serverProvider!: IProvider<ChangesPropagator>;
     @inject(IoC.identifiers.commandManager) private readonly commandManagerProvider!: IProvider<AbstractCommandManager>;
@@ -165,14 +165,31 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
 
     /* DO NOT USE. Set state via the changes propagator instead. */
     public setState<K extends keyof S>(
-        update: (prev: Readonly<S>, props: Readonly<TProps>) => (Pick<S, K> | S | null)
+        update: (Pick<S, K> | S | null) | ((prev: Readonly<S>, props: Readonly<TProps>) => (Pick<S, K> | S | null))
     ) {
-        super.setState((prev: Readonly<S>, props: Readonly<TProps>) => {
-            const newPartialState = update(prev, props) as Pick<S, K>;
-            assert(newPartialState !== null, 'null state not implemented'); // don't know yet what to do when false
-            this.verifyPartialState(newPartialState as Partial<S>); // Pick<T, ...> can always be converted to Partial<T>. Pick<T, K> is a specific Partial<T>
-            return newPartialState;
-        });
+        // interject call to changes propagator:
+        const newUpdate = interjectIntoUpdate(update, toChangesPropagator.bind(this));
+        // do normal function:
+        this.superSetState(newUpdate);
+
+        function toChangesPropagator(this: BaseComponent<TProps, S, CheckableTypes>, result: Pick<S, K> | S | null): void {
+            if (result === null)
+                return;
+
+            // TODO: implement to changes and propagate to changes propagator
+        }
+    }
+    private superSetState<K extends keyof S>(update: ((prevState: Readonly<S>, props: Readonly<TProps>) => (Pick<S, K> | S | null)) | (Pick<S, K> | S | null)) {
+        const newUpdate = interjectIntoUpdate(update, this.assertResultType.bind(this));
+        super.setState(newUpdate);
+    }
+
+    assertResultType<K extends keyof S>(newPartialState: Pick<S, K> | S | null): void {
+        if (newPartialState === null)
+            return;
+
+        // Pick<T, ...> can always be converted to Partial<T>. Pick<T, K> is just a particular Partial<T>
+        this.verifyPartialState(newPartialState as Partial<S>);
     }
     /**
      * Catches exceptions generated in descendant components. Unhandled exceptions will cause
@@ -182,4 +199,32 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
         console.error(error.name + ": " + error.message);
         throw error;
     }
+}
+
+export type superSetStateBaseComponent<P, S> = {
+    superSetState<K extends keyof S>(state: ((prevState: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null)) | (Pick<S, K> | S | null)): void;
+}
+
+function isUpdateFunction<P, S, K extends keyof S>(update: (Pick<S, K> | S | null) | ((prev: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null)))
+    : update is ((prev: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null)) {
+    return typeof update == 'function';
+}
+
+/** Invokes a call on the partial state that is the result of the updater (if it's a function), or the updater itself if it's just state. */
+function interjectIntoUpdate<P, S, K extends keyof S, T>(
+    update: (Pick<S, K> | S | null) | ((prev: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null)),
+    interjectCall: (result: Pick<S, K> | S | null) => void
+): ((Pick<S, K> | S | null) | ((prev: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null))) {
+    if (isUpdateFunction(update)) {
+        return function (prev: Readonly<S>, props: Readonly<P>): (Pick<S, K> | S | null) {
+            const result = update(prev, props);
+            interjectCall(result);
+            return result;
+        }
+    }
+    else {
+        interjectCall(update);
+        return update;
+    }
+
 }
