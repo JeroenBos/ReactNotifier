@@ -191,11 +191,6 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     
     // parameter is the event in case this is a bound command, otherwise anything else. It is used to compute the command state, and that's it
     public executeIfPossible<TSender, TParameter, TState>(
-        command: _CommandViewModel<TSender, void, TState>,
-        sender: TSender,
-        parameter?: undefined
-    ): boolean;
-    public executeIfPossible<TSender, TParameter, TState>(
         command: _CommandViewModel<TSender, TParameter, TState>,
         sender: TSender,
         parameter: TParameter
