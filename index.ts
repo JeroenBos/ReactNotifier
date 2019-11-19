@@ -4,7 +4,7 @@ import container from './IoC/container'; // the empty container
 export { container };
 export { TypedContainer } from './IoC/container';
 export { IChangePropagator, BaseProps, AppId, UNINITIALIZED_ID, ICommandManager, CommandManagerId, BaseState, IComponent, Sender } from './base.interfaces';
-export { BaseComponent, SimpleStateInfo, StateInfoLocalHelper } from './base.component';
+export { BaseComponent, SimpleStateInfo, StateInfoLocalHelper, interjectIntoUpdate } from './base.component';
 export { Http } from './changesPropagator/http';
 export { ChangesPropagator, IResponse, IPropertyChange } from "./changesPropagator/ChangesPropagator";
 export { AbstractCommandManager, CommandManagerProps, CommandManagerState } from './commands/abstractCommandManager';
