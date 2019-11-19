@@ -37,9 +37,6 @@ const sharedConfig = {
         console: true,
         tls: 'empty'
     },
-    plugins: [
-        new CleanWebpackPlugin(['dist'])
-    ],
     watchOptions: {
         aggregateTimeout: 0
     }
@@ -47,6 +44,7 @@ const sharedConfig = {
 
 const mainConfig = {
     ...sharedConfig,
+    plugins: [new CleanWebpackPlugin(['dist'])],
     name: 'main',
     entry: './index.ts',
     output: {

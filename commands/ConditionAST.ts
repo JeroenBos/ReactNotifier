@@ -5,12 +5,12 @@ export interface Booleanable {
     /**
      * 
      * @param sender
-     * @param args If missing, it was triggered by code.
+     * @param state If missing, it was triggered by code.
      */
-    toBoolean(sender: Sender, args?: CommandState): boolean;
+    toBoolean(sender: Sender, state?: CommandState): boolean;
 }
 
-export type FlagDelegate = (sender: Sender, args: CommandState) => boolean;
+export type FlagDelegate = (sender: Sender, state: CommandState) => boolean;
 
 export abstract class ConditionAST implements Booleanable {
     public static parse(expr: string, flags: Readonly<Record<string, FlagDelegate>>): Booleanable {
@@ -50,7 +50,7 @@ export abstract class ConditionAST implements Booleanable {
         }
         return undefined;
     }
-    abstract toBoolean(sender: Sender, args: CommandState): boolean;
+    abstract toBoolean(sender: Sender, state: CommandState): boolean;
 }
 class And extends ConditionAST {
 
@@ -60,8 +60,8 @@ class And extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: Sender, args: CommandState): boolean {
-        return this.lhs.toBoolean(sender, args) && this.rhs.toBoolean(sender, args);
+    toBoolean(sender: Sender, state: CommandState): boolean {
+        return this.lhs.toBoolean(sender, state) && this.rhs.toBoolean(sender, state);
     }
 }
 class Or extends ConditionAST {
@@ -71,8 +71,8 @@ class Or extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: Sender, args: CommandState): boolean {
-        return this.lhs.toBoolean(sender, args) && this.rhs.toBoolean(sender, args);
+    toBoolean(sender: Sender, state: CommandState): boolean {
+        return this.lhs.toBoolean(sender, state) && this.rhs.toBoolean(sender, state);
     }
 }
 class Not extends ConditionAST {
@@ -81,8 +81,8 @@ class Not extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: Sender, args: CommandState): boolean {
-        return !this.operand.toBoolean(sender, args);
+    toBoolean(sender: Sender, state: CommandState): boolean {
+        return !this.operand.toBoolean(sender, state);
     }
 }
 class Flag extends ConditionAST {
@@ -91,12 +91,12 @@ class Flag extends ConditionAST {
         super();
     }
 
-    toBoolean(sender: Sender, args: CommandState): boolean {
+    toBoolean(sender: Sender, state: CommandState): boolean {
         const result = this.getFlag(this.conditionName);
         if (result === undefined) {
             throw new Error(`Flag '${this.conditionName}' was not found`);
         }
-        return result(sender, args);
+        return result(sender, state);
     }
 }
 class Constant extends ConditionAST {
