@@ -163,7 +163,7 @@ export abstract class BaseComponent<TProps extends BaseProps, S extends BaseStat
         this.server.unregister(this);
     }
 
-    /* DO NOT USE. Set state via the changes propagator instead. */
+    /** Sets the state through the changes propagator. */
     public setState<K extends keyof S>(
         update: (Pick<S, K> | S | null) | ((prev: Readonly<S>, props: Readonly<TProps>) => (Pick<S, K> | S | null))
     ) {
@@ -211,7 +211,7 @@ function isUpdateFunction<P, S, K extends keyof S>(update: (Pick<S, K> | S | nul
 }
 
 /** Invokes a call on the partial state that is the result of the updater (if it's a function), or the updater itself if it's just state. */
-function interjectIntoUpdate<P, S, K extends keyof S, T>(
+export function interjectIntoUpdate<P, S, K extends keyof S, T>(
     update: (Pick<S, K> | S | null) | ((prev: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null)),
     interjectCall: (result: Pick<S, K> | S | null) => void
 ): ((Pick<S, K> | S | null) | ((prev: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null))) {
