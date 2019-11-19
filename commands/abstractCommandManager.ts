@@ -171,7 +171,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         const commandNames: string[] = [];
 
         this.inputBindings[inputBinding].forEach((binding: CommandBindingWithCommandName) => {
-            const args = binding.commandName in this.commands ? this.getCommandArgs(this.commands[binding.commandName], sender, e) : undefined;
+            const args = binding.commandName in this.commands ? this.getCommandState(this.commands[binding.commandName], sender, e) : undefined;
             if (binding.condition.toBoolean(sender, args)) {
                 commandNames.push(binding.commandName);
             }
@@ -195,12 +195,12 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         sender: TSender,
         parameter: TParameter
     ): boolean {
-        const args = this.getCommandArgs(command, sender, parameter);
-        if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, args)) {
+        const state = this.getCommandState(command, sender, parameter);
+        if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, state)) {
             return false;
         }
 
-        const sides = command.optimization == undefined ? OptimizationCanExecute.ServersideOnly : command.optimization.canExecute(sender, parameter, args);
+        const sides = command.optimization == undefined ? OptimizationCanExecute.ServersideOnly : command.optimization.canExecute(sender, parameter, state);
 
         if ((sides & OptimizationCanExecute.ServersideOnly) != 0) {
             if (command.__id === undefined)
@@ -209,18 +209,18 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
                 if (!isReference(sender))
                     throw new Error('Cannot send a command to the server without a sender.id');
 
-                this.server.executeCommand(new CommandInstruction(command.name, sender.__id, args));
+                this.server.executeCommand(new CommandInstruction(command.name, sender.__id, state));
             }
         }
 
         if ((sides & OptimizationCanExecute.ClientsideOnly) != 0) {
-            command.optimization!.execute(sender, parameter, args);
+            command.optimization!.execute(sender, parameter, state);
         }
 
         return sides != 0;
     }
 
-    private getCommandArgs<TSender, TParameter, TCommandState>(
+    private getCommandState<TSender, TParameter, TCommandState>(
         command: _CommandViewModel<TSender, TParameter, TCommandState>,
         sender: TSender,
         e: TParameter
