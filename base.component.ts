@@ -213,23 +213,18 @@ function isUpdateFunction<P, S, K extends keyof S>(update: (Pick<S, K> | S | nul
 /** Invokes a call on the partial state that is the result of the updater (if it's a function), or the updater itself if it's just state. */
 export function interjectIntoUpdate<P, S, K extends keyof S, T>(
     update: (Pick<S, K> | S | null) | ((prev: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null)),
-    interjectCall: (result: Pick<S, K> | S | null) => void | (Pick<S, K> | S | null) // if void, then we return the original result
-): ((Pick<S, K> | S | null) | ((prev: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null))) {
-    if (isUpdateFunction(update)) {
-        return function (prev: Readonly<S>, props: Readonly<P>): (Pick<S, K> | S | null) {
-            const result = update(prev, props);
-            const interjectedResult = interjectCall(result);
-            if (interjectedResult === undefined)
-                return result;
-            return interjectedResult;
-        }
-    }
-    else {
-        const interjectedResult = interjectCall(update);
-        if (interjectedResult === undefined)
-            return update;
-        else
-            return interjectedResult;
+    interjectCall: (result: Pick<S, K> | S | null, prev: Readonly<S>, props: Readonly<P>) => void | (Pick<S, K> | S | null) // if void, then we return the original result
+): ((prev: Readonly<S>, props: Readonly<P>) => (Pick<S, K> | S | null)) {
+    if (!isUpdateFunction(update)) {
+        const state = update;
+        update = (prev, props) => state;
     }
 
+    return function (prev: Readonly<S>, props: Readonly<P>): (Pick<S, K> | S | null) {
+        const result = (update as any)(prev, props);
+        const interjectedResult = interjectCall(result, prev, props);
+        if (interjectedResult === undefined)
+            return result;
+        return interjectedResult;
+    }
 }
