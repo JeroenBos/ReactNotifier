@@ -52,6 +52,19 @@ export abstract class ConditionAST implements Booleanable {
         return undefined;
     }
     abstract toBoolean(sender: Sender, parameter: CommandParameter): boolean;
+    /** Lists all flags in the specified condition, and their evaluations. */
+    public static debug(condition: string | ConditionAST, flags: Readonly<Record<string, FlagDelegate>>, sender: Sender, parameter: CommandParameter): Record<string, boolean> {
+        assert(typeof condition == 'string' || condition instanceof ConditionAST, `argument type error: condition (type = ${typeof condition}) should be of type string | ConditionAST`);
+        const tree: ConditionAST = typeof condition == 'string' ? ConditionAST.parse(condition, flags) : condition;
+        const result: Record<string, boolean> = {};
+        tree.visit(node => {
+            if (Flag.isFlag(node)) {
+                result[node.conditionName] = node.toBoolean(sender, parameter);
+            }
+        });
+        return result;
+    }
+
     abstract visit(visitor: (node: ConditionAST) => void): void;
 }
 class And extends ConditionAST {
