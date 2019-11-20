@@ -152,14 +152,16 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         const commandNames = this.getCommandBindingsFor(inputBinding, sender, e);
 
+        let anyCommandExecuted = false;
         for (let i = 0; i < commandNames.length; i++) {
-
             const executed = this.executeByNameIfPossible(commandNames[i], sender, e);
-            if (executed) {
-                e.stopPropagation();
-                // decide here whether to invoke all executable bound commands, or merely the first one, or dependent on properties of InputEvent 
-                break;
-            }
+            // by ignoring `executed` we invoke all executable bound commands, not merely the first one.
+            // note that nothing is guaranteed about their order of execution.
+
+            anyCommandExecuted = anyCommandExecuted || executed;
+        }
+        if (anyCommandExecuted) {
+            e.stopPropagation();
         }
 
     }
