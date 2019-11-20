@@ -154,7 +154,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         for (let i = 0; i < commandNames.length; i++) {
 
-            const executed = this.executeByNameIfPossible(commandNames[0], sender, e);
+            const executed = this._executeByNameIfPossible(commandNames[i].commandState, sender, e, commandNames[i].commandState);
             if (executed) {
                 e.stopPropagation();
                 // decide here whether to invoke all executable bound commands, or merely the first one, or dependent on properties of InputEvent 
@@ -167,17 +167,17 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     /**
      * Gets the names of the commands bound to the specified input, for which the binding condition is true.
      */
-    private getCommandBindingsFor(inputBinding: CanonicalInputBinding, sender: Sender, e: InputEvent): string[] {
+    private getCommandBindingsFor(inputBinding: CanonicalInputBinding, sender: Sender, e: InputEvent): { commandName: string, commandState: CommandState }[] {
         if (!(inputBinding in this.inputBindings))
             return [];
 
-        const commandNames: string[] = [];
+        const commandNames: { commandName: string, commandState: CommandState }[] = [];
 
         this.inputBindings[inputBinding].forEach((binding: CommandBindingWithCommandName) => {
             const command = this.commands[binding.commandName];
             const state = binding.commandName in this.commands ? this.getCommandState(command, sender, e) : undefined;
             if (binding.condition.toBoolean(sender, state)) {
-                commandNames.push(binding.commandName);
+                commandNames.push({ commandName: binding.commandName, commandState: state });
             }
             else if (this.onRejectBoundCommand !== undefined) {
                 this.onRejectBoundCommand(command, sender, e, state, binding);
@@ -188,21 +188,31 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     }
 
     public executeByNameIfPossible(commandName: string, sender: Sender, parameter: CommandParameter): boolean {
+        return this._executeByNameIfPossible(commandName, sender, parameter);
+    }
+    private _executeByNameIfPossible(commandName: string, sender: Sender, parameter: CommandParameter, precalculatedState?: { value: CommandState }): boolean {
         if (!this.hasCommand(commandName)) {
             console.warn(`The command '${commandName}' does not exist`);
             return false;
         }
         const command = this.commands[commandName];
-        return this.executeIfPossible(command, sender, parameter);
+        return this._executeIfPossible(command, sender, parameter, precalculatedState);
     }
-
-    // parameter is the event in case this is a bound command, otherwise anything else. It is used to compute the command state, and that's it
     public executeIfPossible<TSender extends Sender, TParameter, TState>(
         command: _CommandViewModel<TSender, TParameter, TState>,
         sender: TSender,
-        parameter: TParameter
+        parameter: TParameter) {
+        return this._executeIfPossible(command, sender, parameter);
+    }
+
+    // parameter is the event in case this is a bound command, otherwise anything else. It is used to compute the command state, and that's it
+    private _executeIfPossible<TSender extends Sender, TParameter, TState>(
+        command: _CommandViewModel<TSender, TParameter, TState>,
+        sender: TSender,
+        parameter: TParameter,
+        precalculatedState?: { value: CommandState }
     ): boolean {
-        const state = this.getCommandState(command, sender, parameter);
+        const state = precalculatedState !== undefined ? precalculatedState.value : this.getCommandState(command, sender, parameter);
         if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, state)) {
             if (this.onRejectBoundCommand !== undefined)
                 this.onRejectBoundCommand(command, sender, parameter, state);
