@@ -103,7 +103,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     }
 
     public beforeExecute?<TSender, TParameter, TState>(command: _CommandViewModel<TSender, TParameter, TState>, sides: OptimizationCanExecute, sender: TSender, parameter: TParameter, state: TState): void;
-    public onRejectBoundCommand?<TSender, TParameter, TState>(command: _CommandViewModel<TSender, TParameter, TState>, sender: TSender, parameter: TParameter, state: TState, binding?: CommandBindingWithCommandName): void;
+    public onRejectBoundCommand?<TSender, TParameter, TState>(command: _CommandViewModel<TSender, TParameter, TState>, sender: TSender, parameter: TParameter, binding?: CommandBindingWithCommandName): void;
 
     /**
       * 
@@ -154,7 +154,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         for (let i = 0; i < commandNames.length; i++) {
 
-            const executed = this._executeByNameIfPossible(commandNames[i].commandState, sender, e, commandNames[i].commandState);
+            const executed = this.executeByNameIfPossible(commandNames[i], sender, e);
             if (executed) {
                 e.stopPropagation();
                 // decide here whether to invoke all executable bound commands, or merely the first one, or dependent on properties of InputEvent 
@@ -167,20 +167,19 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     /**
      * Gets the names of the commands bound to the specified input, for which the binding condition is true.
      */
-    private getCommandBindingsFor(inputBinding: CanonicalInputBinding, sender: Sender, e: InputEvent): { commandName: string, commandState: CommandState }[] {
+    private getCommandBindingsFor(inputBinding: CanonicalInputBinding, sender: Sender, e: InputEvent): string[] {
         if (!(inputBinding in this.inputBindings))
             return [];
 
-        const commandNames: { commandName: string, commandState: CommandState }[] = [];
+        const commandNames: string[] = [];
 
         this.inputBindings[inputBinding].forEach((binding: CommandBindingWithCommandName) => {
             const command = this.commands[binding.commandName];
-            const state = binding.commandName in this.commands ? this.getCommandState(command, sender, e) : undefined;
-            if (binding.condition.toBoolean(sender, state)) {
-                commandNames.push({ commandName: binding.commandName, commandState: state });
+            if (binding.condition.toBoolean(sender, e)) {
+                commandNames.push(binding.commandName);
             }
             else if (this.onRejectBoundCommand !== undefined) {
-                this.onRejectBoundCommand(command, sender, e, state, binding);
+                this.onRejectBoundCommand(command, sender, e, binding);
             }
         });
 
@@ -212,14 +211,14 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         parameter: TParameter,
         precalculatedState?: { value: CommandState }
     ): boolean {
-        const state = precalculatedState !== undefined ? precalculatedState.value : this.getCommandState(command, sender, parameter);
-        if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, state)) {
+        if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, parameter)) {
             if (this.onRejectBoundCommand !== undefined)
-                this.onRejectBoundCommand(command, sender, parameter, state);
+                this.onRejectBoundCommand(command, sender, parameter);
             return false;
         }
 
-        const sides = command.optimization == undefined ? OptimizationCanExecute.ServersideOnly : command.optimization.canExecute(sender, parameter, state);
+        const state = precalculatedState !== undefined ? precalculatedState.value : this.getCommandState(command, sender, parameter);
+        const sides = command.optimization === undefined ? OptimizationCanExecute.ServersideOnly : command.optimization.canExecute(sender, parameter, state);
         if (sides != OptimizationCanExecute.False && this.beforeExecute !== undefined) {
             this.beforeExecute(command, sides, sender, parameter, state);
         }
