@@ -13,7 +13,7 @@ export interface Booleanable {
 export type FlagDelegate = (sender: Sender, parameter: CommandParameter) => boolean;
 
 export abstract class ConditionAST implements Booleanable {
-    public static parse(expr: string, flags: Readonly<Record<string, FlagDelegate>>): Booleanable {
+    public static parse(expr: string, flags: Readonly<Record<string, FlagDelegate>>): ConditionAST {
         expr = expr.trim();
         if (expr.length == 0)
             return Constant.True;
