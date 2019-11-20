@@ -1,5 +1,6 @@
 ﻿import { Sender } from "../base.interfaces";
 import { CommandParameter } from '../commands/inputTypes';
+import { assert } from "jbsnorro";
 
 export interface Booleanable {
     /**
@@ -51,6 +52,7 @@ export abstract class ConditionAST implements Booleanable {
         return undefined;
     }
     abstract toBoolean(sender: Sender, parameter: CommandParameter): boolean;
+    abstract visit(visitor: (node: ConditionAST) => void): void;
 }
 class And extends ConditionAST {
 
@@ -63,6 +65,12 @@ class And extends ConditionAST {
     toBoolean(sender: Sender, parameter: CommandParameter): boolean {
         return this.lhs.toBoolean(sender, parameter) && this.rhs.toBoolean(sender, parameter);
     }
+
+    visit(visitor: (node: ConditionAST) => void): void {
+        visitor(this);
+        this.lhs.visit(visitor);
+        this.rhs.visit(visitor);
+    }
 }
 class Or extends ConditionAST {
     public constructor(
@@ -74,6 +82,12 @@ class Or extends ConditionAST {
     toBoolean(sender: Sender, parameter: CommandParameter): boolean {
         return this.lhs.toBoolean(sender, parameter) && this.rhs.toBoolean(sender, parameter);
     }
+
+    visit(visitor: (node: ConditionAST) => void): void {
+        visitor(this);
+        this.lhs.visit(visitor);
+        this.rhs.visit(visitor);
+    }
 }
 class Not extends ConditionAST {
     public constructor(
@@ -84,11 +98,19 @@ class Not extends ConditionAST {
     toBoolean(sender: Sender, parameter: CommandParameter): boolean {
         return !this.operand.toBoolean(sender, parameter);
     }
+
+    visit(visitor: (node: ConditionAST) => void): void {
+        visitor(this);
+        this.operand.visit(visitor);
+    }
 }
 class Flag extends ConditionAST {
-    public constructor(private readonly conditionName: string,
+    public constructor(public readonly conditionName: string,
         private readonly getFlag: (conditionName: string) => FlagDelegate | undefined) {
         super();
+    }
+    public static isFlag(node: ConditionAST): node is Flag {
+        return (node as Flag).conditionName !== undefined && (node as Flag).getFlag !== undefined;
     }
 
     toBoolean(sender: Sender, parameter: CommandParameter): boolean {
@@ -97,6 +119,10 @@ class Flag extends ConditionAST {
             throw new Error(`Flag '${this.conditionName}' was not found`);
         }
         return result(sender, parameter);
+    }
+
+    visit(visitor: (node: ConditionAST) => void): void {
+        visitor(this);
     }
 }
 class Constant extends ConditionAST {
@@ -108,5 +134,9 @@ class Constant extends ConditionAST {
     }
     toBoolean(): boolean {
         return this.value;
+    }
+
+    visit(visitor: (node: ConditionAST) => void): void {
+        visitor(this);
     }
 }
