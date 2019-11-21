@@ -96,8 +96,6 @@ export class ChangesPropagator implements IChangePropagator {
         await this.postAndProcess('RegisterRequest');
     }
     public async executeCommand(command: CommandInstruction) {
-        if (command.commandName != 'mock')
-            console.log(`executeCommand: '${command.commandName}'`);
         if (command == null || command.commandName == null || command.commandName == '' || command.viewModelId < UNINITIALIZED_ID || command.eventArgs == null) {
             throw fail('Invalid command instruction');
         }
