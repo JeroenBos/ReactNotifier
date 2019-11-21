@@ -103,7 +103,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     }
 
     public beforeExecute?<TSender, TParameter, TState>(command: _CommandViewModel<TSender, TParameter, TState>, sides: OptimizationCanExecute, sender: TSender, parameter: TParameter, state: TState): void;
-    public onRejectBoundCommand?<TSender, TParameter, TState>(command: _CommandViewModel<TSender, TParameter, TState>, sender: TSender, parameter: TParameter, state: TState, binding?: CommandBindingWithCommandName): void;
+    public onRejectBoundCommand?<TSender, TParameter, TState>(command: _CommandViewModel<TSender, TParameter, TState>, sender: TSender, parameter: TParameter, binding?: CommandBindingWithCommandName): void;
 
     /**
       * 
@@ -152,14 +152,16 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         const commandNames = this.getCommandBindingsFor(inputBinding, sender, e);
 
+        let anyCommandExecuted = false;
         for (let i = 0; i < commandNames.length; i++) {
+            const executed = this.executeByNameIfPossible(commandNames[i], sender, e);
+            // by ignoring `executed` we invoke all executable bound commands, not merely the first one.
+            // note that nothing is guaranteed about their order of execution.
 
-            const executed = this.executeByNameIfPossible(commandNames[0], sender, e);
-            if (executed) {
-                e.stopPropagation();
-                // decide here whether to invoke all executable bound commands, or merely the first one, or dependent on properties of InputEvent 
-                break;
-            }
+            anyCommandExecuted = anyCommandExecuted || executed;
+        }
+        if (anyCommandExecuted) {
+            e.stopPropagation();
         }
 
     }
@@ -175,12 +177,11 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         this.inputBindings[inputBinding].forEach((binding: CommandBindingWithCommandName) => {
             const command = this.commands[binding.commandName];
-            const state = binding.commandName in this.commands ? this.getCommandState(command, sender, e) : undefined;
-            if (binding.condition.toBoolean(sender, state)) {
+            if (binding.condition.toBoolean(sender, e)) {
                 commandNames.push(binding.commandName);
             }
             else if (this.onRejectBoundCommand !== undefined) {
-                this.onRejectBoundCommand(command, sender, e, state, binding);
+                this.onRejectBoundCommand(command, sender, e, binding);
             }
         });
 
@@ -188,28 +189,38 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     }
 
     public executeByNameIfPossible(commandName: string, sender: Sender, parameter: CommandParameter): boolean {
+        return this._executeByNameIfPossible(commandName, sender, parameter);
+    }
+    private _executeByNameIfPossible(commandName: string, sender: Sender, parameter: CommandParameter, precalculatedState?: { value: CommandState }): boolean {
         if (!this.hasCommand(commandName)) {
             console.warn(`The command '${commandName}' does not exist`);
             return false;
         }
         const command = this.commands[commandName];
-        return this.executeIfPossible(command, sender, parameter);
+        return this._executeIfPossible(command, sender, parameter, precalculatedState);
     }
-
-    // parameter is the event in case this is a bound command, otherwise anything else. It is used to compute the command state, and that's it
     public executeIfPossible<TSender extends Sender, TParameter, TState>(
         command: _CommandViewModel<TSender, TParameter, TState>,
         sender: TSender,
-        parameter: TParameter
+        parameter: TParameter) {
+        return this._executeIfPossible(command, sender, parameter);
+    }
+
+    // parameter is the event in case this is a bound command, otherwise anything else. It is used to compute the command state, and that's it
+    private _executeIfPossible<TSender extends Sender, TParameter, TState>(
+        command: _CommandViewModel<TSender, TParameter, TState>,
+        sender: TSender,
+        parameter: TParameter,
+        precalculatedState?: { value: CommandState }
     ): boolean {
-        const state = this.getCommandState(command, sender, parameter);
-        if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, state)) {
+        if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, parameter)) {
             if (this.onRejectBoundCommand !== undefined)
-                this.onRejectBoundCommand(command, sender, parameter, state);
+                this.onRejectBoundCommand(command, sender, parameter);
             return false;
         }
 
-        const sides = command.optimization == undefined ? OptimizationCanExecute.ServersideOnly : command.optimization.canExecute(sender, parameter, state);
+        const state = precalculatedState !== undefined ? precalculatedState.value : this.getCommandState(command, sender, parameter);
+        const sides = command.optimization === undefined ? OptimizationCanExecute.ServersideOnly : command.optimization.canExecute(sender, parameter, state);
         if (sides != OptimizationCanExecute.False && this.beforeExecute !== undefined) {
             this.beforeExecute(command, sides, sender, parameter, state);
         }

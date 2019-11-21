@@ -4,13 +4,13 @@ import container from './IoC/container'; // the empty container
 export { container };
 export { TypedContainer } from './IoC/container';
 export { IChangePropagator, BaseProps, AppId, UNINITIALIZED_ID, ICommandManager, CommandManagerId, BaseState, IComponent, Sender } from './base.interfaces';
-export { BaseComponent, SimpleStateInfo, StateInfoLocalHelper } from './base.component';
+export { BaseComponent, SimpleStateInfo, StateInfoLocalHelper, interjectIntoUpdate } from './base.component';
 export { Http } from './changesPropagator/http';
 export { ChangesPropagator, IResponse, IPropertyChange } from "./changesPropagator/ChangesPropagator";
 export { AbstractCommandManager, CommandManagerProps, CommandManagerState } from './commands/abstractCommandManager';
 export { CommandInstruction } from './commands/commandInstruction';
 export { CommandViewModel, Reducer, CommandOptimization, CommandStateFactory } from './commands/commands';
-export { FlagDelegate } from './commands/ConditionAST';
+export { ConditionAST, FlagDelegate } from './commands/ConditionAST';
 export { CanonicalInputBinding } from './commands/inputBindingParser';
 export { InputEvent } from './commands/inputTypes';
 export { commandsTypeDescription } from './commands/commands.typesystem';
