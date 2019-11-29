@@ -151,10 +151,11 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         let anyCommandExecuted = false;
         for (let i = 0; i < commandNames.length; i++) {
-            const executed = this.executeByNameIfPossible(commandNames[i], sender, e);
+            const executedOrPromise = this.executeByNameIfPossible(commandNames[i], sender, e);
             // by ignoring `executed` we invoke all executable bound commands, not merely the first one.
             // note that nothing is guaranteed about their order of execution.
 
+            const executed = executedOrPromise === true || executedOrPromise instanceof Promise; // serverside execution yields a promise -> executed = true
             anyCommandExecuted = anyCommandExecuted || executed;
         }
         if (anyCommandExecuted) {
@@ -185,10 +186,10 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return commandNames;
     }
 
-    public executeByNameIfPossible(commandName: string, sender: Sender, parameter: CommandParameter): boolean {
+    public executeByNameIfPossible(commandName: string, sender: Sender, parameter: CommandParameter) {
         return this._executeByNameIfPossible(commandName, sender, parameter);
     }
-    private _executeByNameIfPossible(commandName: string, sender: Sender, parameter: CommandParameter, precalculatedState?: { value: CommandState }): boolean {
+    private _executeByNameIfPossible(commandName: string, sender: Sender, parameter: CommandParameter, precalculatedState?: { value: CommandState }): boolean | Promise<void> {
         if (!this.hasCommand(commandName)) {
             console.warn(`The command '${commandName}' does not exist`);
             return false;
@@ -209,7 +210,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         sender: TSender,
         parameter: TParameter,
         precalculatedState?: { value: CommandState }
-    ): boolean {
+    ): boolean | Promise<void> {
         if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, parameter)) {
             if (this.onRejectBoundCommand !== undefined)
                 this.onRejectBoundCommand(command, sender, parameter);
@@ -222,6 +223,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
             this.beforeExecute(command, sides, sender, parameter, state);
         }
 
+        let executeCommandServersidePromise: Promise<void> | undefined = undefined;
         if ((sides & OptimizationCanExecute.ServersideOnly) != 0) {
             if (command.__id === undefined && this.commands[command.name]?.__id === undefined) {
                 console.warn(`Command '${command.name}' is not known at the server`);
@@ -230,7 +232,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
                 if (!isReference(sender))
                     throw new Error('Cannot send a command to the server without a sender.id');
 
-                this.server.executeCommand(new CommandInstruction(command.name, sender.__id, state));
+                executeCommandServersidePromise = this.server.executeCommand(new CommandInstruction(command.name, sender.__id, state));
             }
         }
 
@@ -238,7 +240,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
             command.optimization!.execute(sender, parameter, state);
         }
 
-        return sides != 0;
+        return executeCommandServersidePromise ?? (sides != 0);
     }
 
     private getCommandState<TSender, TParameter, TCommandState>(
