@@ -1,14 +1,11 @@
 ﻿import 'rxjs/add/operator/toPromise';
 import { BaseState, ICommandManager, BaseProps, CommandManagerId, IComponent, IChangePropagator, Sender, isReference } from '../base.interfaces';
 import { CommandInstruction } from './commandInstruction';
-import { CommandBindingWithCommandName, CommandOptimization, CommandStateFactory, CommandViewModel as _CommandViewModel, OptimizationCanExecute } from './commands';
+import { CommandBindingWithCommandName, CommandOptimization, CommandStateFactory, CommandViewModel, OptimizationCanExecute } from './commands';
 import { ConditionAST, FlagDelegate } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
 import { InputEvent, CommandState, CommandParameter } from './inputTypes';
 import { SimpleStateInfo } from '../base.component';
-
-type CommandViewModel = _CommandViewModel<Sender, CommandParameter, CommandState>;
-
 
 export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerProps, CommandManagerState> {
     private _state: CommandManagerState;
@@ -102,8 +99,8 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return name in this.commands;
     }
 
-    public beforeExecute?<TSender, TParameter, TState>(command: _CommandViewModel<TSender, TParameter, TState>, sides: OptimizationCanExecute, sender: TSender, parameter: TParameter, state: TState): void;
-    public onRejectBoundCommand?<TSender, TParameter, TState>(command: _CommandViewModel<TSender, TParameter, TState>, sender: TSender, parameter: TParameter, binding?: CommandBindingWithCommandName): void;
+    public beforeExecute?<TSender, TParameter, TState>(command: CommandViewModel<TSender, TParameter, TState>, sides: OptimizationCanExecute, sender: TSender, parameter: TParameter, state: TState): void;
+    public onRejectBoundCommand?<TSender, TParameter, TState>(command: CommandViewModel<TSender, TParameter, TState>, sender: TSender, parameter: TParameter, binding?: CommandBindingWithCommandName): void;
 
     /**
       * 
@@ -200,7 +197,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return this._executeIfPossible(command, sender, parameter, precalculatedState);
     }
     public executeIfPossible<TSender extends Sender, TParameter, TState>(
-        command: _CommandViewModel<TSender, TParameter, TState>,
+        command: CommandViewModel<TSender, TParameter, TState>,
         sender: TSender,
         parameter: TParameter) {
         return this._executeIfPossible(command, sender, parameter);
@@ -208,7 +205,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
     // parameter is the event in case this is a bound command, otherwise anything else. It is used to compute the command state, and that's it
     private _executeIfPossible<TSender extends Sender, TParameter, TState>(
-        command: _CommandViewModel<TSender, TParameter, TState>,
+        command: CommandViewModel<TSender, TParameter, TState>,
         sender: TSender,
         parameter: TParameter,
         precalculatedState?: { value: CommandState }
@@ -226,8 +223,9 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         }
 
         if ((sides & OptimizationCanExecute.ServersideOnly) != 0) {
-            if (command.__id === undefined)
+            if (command.__id === undefined && this.commands[command.name]?.__id === undefined) {
                 console.warn(`Command '${command.name}' is not known at the server`);
+            }
             else {
                 if (!isReference(sender))
                     throw new Error('Cannot send a command to the server without a sender.id');
@@ -244,7 +242,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     }
 
     private getCommandState<TSender, TParameter, TCommandState>(
-        command: _CommandViewModel<TSender, TParameter, TCommandState>,
+        command: CommandViewModel<TSender, TParameter, TCommandState>,
         sender: TSender,
         e: TParameter
     ): TCommandState {
@@ -294,4 +292,4 @@ export interface CommandManagerState extends BaseState {
     inputBindings: Record<CanonicalInputBinding, CommandBindingWithCommandName[]>;
 }
 
-export type CommandsMap = Record<string, CommandViewModel>;
+export type CommandsMap = Record<string, CommandViewModel<Sender, CommandParameter, CommandState>>;
