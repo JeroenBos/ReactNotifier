@@ -223,8 +223,9 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         }
 
         if ((sides & OptimizationCanExecute.ServersideOnly) != 0) {
-            if (command.__id === undefined)
+            if (command.__id === undefined && this.commands[command.name]?.__id === undefined) {
                 console.warn(`Command '${command.name}' is not known at the server`);
+            }
             else {
                 if (!isReference(sender))
                     throw new Error('Cannot send a command to the server without a sender.id');
