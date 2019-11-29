@@ -37,7 +37,7 @@ export interface CommandViewModel<TSender = any, TParameter = void, TState = voi
      */
     __id?: number;
     /**
-     * The name of this command. 
+     * The name of this command.
      */
     name: string;
     /**
@@ -60,8 +60,6 @@ export interface CommandViewModel<TSender = any, TParameter = void, TState = voi
 
 export type OptimizedCommandViewModel<TSender = any, TParameter = void, TState = void> =
     MakeRequired<CommandViewModel<TSender, TParameter, TState>, 'optimization'>;
-/** When the name is not specified, the default (the name of the property in the commands collection) is used. */
-export type OptimizedNamelessCommandViewModel<TSender = any, TParameter = void, TState = void> = PartialBy<OptimizedCommandViewModel<TSender, TParameter, TState>, 'name'>;
 
 export class CommandBinding {
     public constructor(
@@ -75,8 +73,6 @@ export class CommandBindingWithCommandName {
         public readonly input: CanonicalInputBinding) {
     }
 }
-/** When the name is not specified, the default (the name of the property in the commands collection) is used. */
-export type NamelessCommandViewModel<TSender = any, TParameter = void, TState = void> = PartialBy<CommandViewModel<TSender, TParameter, TState>, 'name'>;
 export enum OptimizationCanExecute {
     /** Indicates the associated command cannot be executed. 
      * The input that triggered this command will not be consumed. */

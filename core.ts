@@ -74,6 +74,3 @@ function deepMergeHelper<T extends object>(merge: T, data: object, mergeInPlace:
     }
     return merge;
 }
-
-
-export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
