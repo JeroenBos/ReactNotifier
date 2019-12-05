@@ -54,9 +54,9 @@ export interface ICommandManager extends IComponent<CommandManagerProps, Command
     executeCommandByName(commandName: string, sender: Sender, e?: InputEvent): void;
 }
 export interface IChangePropagator {
-    open(initialization: Promise<any>): void;
+    open(initialization: Promise<any>): Promise<void>;
     /** Executes a command serverside. */
-    executeCommand(commandInstruction: CommandInstruction): void;
+    executeCommand(commandInstruction: CommandInstruction): Promise<void>;
     register(newComponent: IComponent): Readonly<BaseState>;
     onClientsideCollectionChange(container: IComponent, collectionName: string, newItem: StateType, index: number): void;
     unregister(component: IComponent): void;
