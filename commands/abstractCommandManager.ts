@@ -103,6 +103,8 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     public beforeExecute?<TSender, TParameter, TState>(command: CommandViewModel<TSender, TParameter, TState>, sides: OptimizationCanExecute, sender: TSender, parameter: TParameter, state: TState): void;
     /** Is called when execution of a command is halted because of false from 'canExecute' (of either the command condition or the command binding). */
     public onRejectBoundCommand?<TSender, TParameter, TState>(command: CommandViewModel<TSender, TParameter, TState>, sender: TSender, parameter: TParameter, binding?: CommandBindingWithCommandName): void;
+    /** Is called from the catch of the promise of a serverside command execution. If this remains undefined, no catch at all will be attached to the promise. */
+    public DEBUG_catch?(reason: any): any;
 
     /**
       * 
@@ -235,9 +237,14 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
                     throw new Error('Cannot send a command to the server without a sender.id');
 
                 executeCommandServersidePromise = this.server.executeCommand(new CommandInstruction(command.name, sender.__id, state));
-                // executeCommandServersidePromise = this.server.executeCommand(new CommandInstruction(command.name, sender.__id, state)).catch(reason => {
-                //     setImmediate(() => fail(reason));
-                // });
+                if (this.DEBUG_catch !== undefined) {
+                    executeCommandServersidePromise.catch(reason => {
+                        if (this.DEBUG_catch === undefined)
+                            throw new Error(reason);
+                        else
+                            return this.DEBUG_catch(reason);
+                    });
+                }
             }
         }
 
