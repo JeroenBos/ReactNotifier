@@ -6,6 +6,7 @@ import { ConditionAST, FlagDelegate } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
 import { InputEvent, CommandState, CommandParameter } from './inputTypes';
 import { SimpleStateInfo } from '../base.component';
+import { fail } from 'jbsnorro';
 
 export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerProps, CommandManagerState> {
     private _state: CommandManagerState;
@@ -98,8 +99,9 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     public hasCommand(name: string): boolean {
         return name in this.commands;
     }
-
+    /** Is called right before executing a command. */
     public beforeExecute?<TSender, TParameter, TState>(command: CommandViewModel<TSender, TParameter, TState>, sides: OptimizationCanExecute, sender: TSender, parameter: TParameter, state: TState): void;
+    /** Is called when execution of a command is halted because of false from 'canExecute' (of either the command condition or the command binding). */
     public onRejectBoundCommand?<TSender, TParameter, TState>(command: CommandViewModel<TSender, TParameter, TState>, sender: TSender, parameter: TParameter, binding?: CommandBindingWithCommandName): void;
 
     /**
@@ -233,6 +235,9 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
                     throw new Error('Cannot send a command to the server without a sender.id');
 
                 executeCommandServersidePromise = this.server.executeCommand(new CommandInstruction(command.name, sender.__id, state));
+                // executeCommandServersidePromise = this.server.executeCommand(new CommandInstruction(command.name, sender.__id, state)).catch(reason => {
+                //     setImmediate(() => fail(reason));
+                // });
             }
         }
 
