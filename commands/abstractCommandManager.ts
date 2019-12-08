@@ -6,7 +6,6 @@ import { ConditionAST, FlagDelegate } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
 import { InputEvent, CommandState, CommandParameter } from './inputTypes';
 import { SimpleStateInfo } from '../base.component';
-import { fail } from 'jbsnorro';
 
 export class AbstractCommandManager implements ICommandManager, IComponent<CommandManagerProps, CommandManagerState> {
     private _state: CommandManagerState;
@@ -106,23 +105,6 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     /** Is called from the catch of the promise of a serverside command execution. If this remains undefined, no catch at all will be attached to the promise. */
     public DEBUG_catch?(reason: any): any;
 
-    /**
-      * 
-      * @param e The argument to the command. Usually the event args, whose propagation can be stopped by the client side command.
-      */
-    public executeCommandByName(commandName: string, sender: Sender, e?: CommandParameter): void {
-        const s = sender as { __id?: number };
-        if (s.__id === undefined && this.commands[commandName] !== undefined && this.commands[commandName].optimization === undefined) {
-            throw new Error('Cannot send a command to the server without a sender.id');
-        }
-
-        const executed = this.executeByNameIfPossible(commandName, s, e);
-        if (!executed && this.hasCommand(commandName)) {
-            console.warn(`The command '${commandName}' cannot execute on '${Object.getPrototypeOf(s).constructor.name}'(id=${s.__id})`);
-        }
-    }
-    // public execute<TSender, TParameter, TState>(command: _CommandViewModel<TSender, TParameter, TState>, sender: TSender, parameter: TParameter) {
-    // }
     public handleMouseMove(sender: Sender, e: React.MouseEvent): void {
 
         this.handle(CanonicalInputBinding.fromMouseMoveEvent(e), sender, e);
@@ -155,7 +137,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
 
         let anyCommandExecuted = false;
         for (let i = 0; i < commandNames.length; i++) {
-            const executedOrPromise = this.executeByNameIfPossible(commandNames[i], sender, e);
+            const executedOrPromise = this.executeCommandByNameIfPossible(commandNames[i], sender, e);
             // by ignoring `executed` we invoke all executable bound commands, not merely the first one.
             // note that nothing is guaranteed about their order of execution.
 
@@ -190,10 +172,10 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         return commandNames;
     }
 
-    public executeByNameIfPossible(commandName: string, sender: Sender, parameter: CommandParameter) {
-        return this._executeByNameIfPossible(commandName, sender, parameter);
+    public executeCommandByNameIfPossible(commandName: string, sender: Sender, parameter?: CommandParameter) {
+        return this._executeCommandByName(commandName, sender, parameter);
     }
-    private _executeByNameIfPossible(commandName: string, sender: Sender, parameter: CommandParameter, precalculatedState?: { value: CommandState }): boolean | Promise<void> {
+    private _executeCommandByName(commandName: string, sender: Sender, parameter: CommandParameter, precalculatedState?: { value: CommandState }): boolean | Promise<void> {
         if (!this.hasCommand(commandName)) {
             console.warn(`The command '${commandName}' does not exist`);
             return false;

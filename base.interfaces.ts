@@ -1,4 +1,4 @@
-import { InputEvent } from './commands/inputTypes';
+import { CommandParameter } from './commands/inputTypes';
 import { CommandInstruction } from './commands/commandInstruction';
 import { CommandManagerState, CommandManagerProps } from './commands/abstractCommandManager';
 import { StateType } from './changesPropagator/common';
@@ -51,7 +51,7 @@ export interface ICommandManager extends IComponent<CommandManagerProps, Command
     handleKeyDown(sender: Sender, e: React.KeyboardEvent): void;
     handleKeyUp(sender: Sender, e: React.KeyboardEvent): void
 
-    executeCommandByName(commandName: string, sender: Sender, e?: InputEvent): void;
+    executeCommandByNameIfPossible(commandName: string, sender: Sender, e?: CommandParameter): void;
 }
 export interface IChangePropagator {
     open(initialization: Promise<any>): Promise<void>;
