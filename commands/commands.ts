@@ -19,11 +19,11 @@ type OptionalParameters<TSender, TParameter, TState, TReturn> =
     : (sender: TSender, args_e: TParameter, state: TState) => TReturn;
 
 
-export interface CommandOptimization<TSender = any, TParameter = void, TState = void> {
+export interface CommandOptimization<TSender = any, TParameter = void, TState = void, TOptimizationCanExecute extends OptimizationCanExecute = OptimizationCanExecute> {
     /**
      * @param {(InputEvent | CommandParameter)} args_e Means parameter or e, i.e. e (=InputEvent) is regarded as parameter.
      */
-    readonly canExecute: OptionalParameters<TSender, TParameter, TState, OptimizationCanExecute>;
+    readonly canExecute: OptionalParameters<TSender, TParameter, TState, TOptimizationCanExecute>;
     /**
      * Returns the new state with the effect of this command.
      * @param {(InputEvent | CommandParameter)} args_e Means parameter or e, i.e. e (=InputEvent) is regarded as parameter
@@ -31,7 +31,7 @@ export interface CommandOptimization<TSender = any, TParameter = void, TState = 
     readonly execute: OptionalParameters<TSender, TParameter, TState, void>;
 }
 
-export interface CommandViewModel<TSender = any, TParameter = void, TState = void> {
+export interface CommandViewModel<TSender = any, TParameter = void, TState = void, TOptimizationFlag extends OptimizationCanExecute = OptimizationCanExecute> {
     /**
      * The id of this command. Presence means presence of a serverside complement, and vice versa.
      */
@@ -50,7 +50,7 @@ export interface CommandViewModel<TSender = any, TParameter = void, TState = voi
      * otherwise they're run both: either the optimization is expected to produce the same or partially same results as by the server,
      * or the optimization can loading indicators.
      */
-    optimization?: CommandOptimization<TSender, TParameter, TState>;
+    optimization?: CommandOptimization<TSender, TParameter, TState, TOptimizationFlag>;
     /**
      * An object/function that extracts command state from the event arg. 
      * The command state is serialized and passed to the serverside command, but also to the optimization.
@@ -58,8 +58,8 @@ export interface CommandViewModel<TSender = any, TParameter = void, TState = voi
     propagation?: IsExact<TState, void> extends true ? undefined : CommandStateFactory<TSender, TParameter, TState>;
 }
 
-export type OptimizedCommandViewModel<TSender = any, TParameter = void, TState = void> =
-    MakeRequired<CommandViewModel<TSender, TParameter, TState>, 'optimization'>;
+export type OptimizedCommandViewModel<TSender = any, TParameter = void, TState = void, TOptimizationCanExecute extends OptimizationCanExecute = OptimizationCanExecute> =
+    MakeRequired<CommandViewModel<TSender, TParameter, TState, TOptimizationCanExecute>, 'optimization'>;
 
 export class CommandBinding {
     public constructor(
@@ -73,6 +73,12 @@ export class CommandBindingWithCommandName {
         public readonly input: CanonicalInputBinding) {
     }
 }
+export type OptimizationCanExecuteResultType<T extends OptimizationCanExecute>
+    = IsExact<T, OptimizationCanExecute.False> extends true ? false
+    : IsExact<T, OptimizationCanExecute.ServersideOnly> extends true ? Promise<void> | false
+    : IsExact<T, OptimizationCanExecute.ClientsideOnly> extends true ? boolean
+    : Promise<void> | boolean;
+
 export enum OptimizationCanExecute {
     /** Indicates the associated command cannot be executed. 
      * The input that triggered this command will not be consumed. */
@@ -85,7 +91,7 @@ export enum OptimizationCanExecute {
     ClientsideOnly = 2,
     /** Indicates the associated command can be executed. Both serverside and clientside. 
      * The input that trigged this command will be consumed. */
-    True = ServersideOnly + ClientsideOnly,
+    True = 3,
 }
 
 export type CommandStateFactory<TSender = any, TParameter = undefined, TState = undefined> =

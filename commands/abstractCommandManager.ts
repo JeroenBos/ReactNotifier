@@ -1,7 +1,7 @@
 ﻿import 'rxjs/add/operator/toPromise';
 import { BaseState, ICommandManager, BaseProps, CommandManagerId, IComponent, IChangePropagator, Sender, isReference } from '../base.interfaces';
 import { CommandInstruction } from './commandInstruction';
-import { CommandBindingWithCommandName, CommandOptimization, CommandStateFactory, CommandViewModel, OptimizationCanExecute } from './commands';
+import { CommandBindingWithCommandName, CommandOptimization, CommandStateFactory, CommandViewModel, OptimizationCanExecute, OptimizationCanExecuteResultType } from './commands';
 import { ConditionAST, FlagDelegate } from './ConditionAST'
 import { CanonicalInputBinding, Kind } from './inputBindingParser';
 import { InputEvent, CommandState, CommandParameter } from './inputTypes';
@@ -175,7 +175,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
     public executeCommandByNameIfPossible(commandName: string, sender: Sender, parameter?: CommandParameter) {
         return this._executeCommandByName(commandName, sender, parameter);
     }
-    private _executeCommandByName(commandName: string, sender: Sender, parameter: CommandParameter, precalculatedState?: { value: CommandState }): boolean | Promise<void> {
+    private _executeCommandByName(commandName: string, sender: Sender, parameter: CommandParameter, precalculatedState?: { value: CommandState }): OptimizationCanExecuteResultType<OptimizationCanExecute> {
         if (!this.hasCommand(commandName)) {
             console.warn(`The command '${commandName}' does not exist`);
             return false;
@@ -183,24 +183,24 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
         const command = this.commands[commandName];
         return this._executeIfPossible(command, sender, parameter, precalculatedState);
     }
-    public executeIfPossible<TSender extends Sender, TParameter, TState>(
-        command: CommandViewModel<TSender, TParameter, TState>,
+    public executeIfPossible<TSender extends Sender, TParameter, TState, TOptimizationResult extends OptimizationCanExecute>(
+        command: CommandViewModel<TSender, TParameter, TState, TOptimizationResult>,
         sender: TSender,
         parameter: TParameter) {
         return this._executeIfPossible(command, sender, parameter);
     }
 
     // parameter is the event in case this is a bound command, otherwise anything else. It is used to compute the command state, and that's it
-    private _executeIfPossible<TSender extends Sender, TParameter, TState>(
-        command: CommandViewModel<TSender, TParameter, TState>,
+    private _executeIfPossible<TSender extends Sender, TParameter, TState, TOptimizationResult extends OptimizationCanExecute>(
+        command: CommandViewModel<TSender, TParameter, TState, TOptimizationResult>,
         sender: TSender,
         parameter: TParameter,
         precalculatedState?: { value: CommandState }
-    ): boolean | Promise<void> {
+    ): OptimizationCanExecuteResultType<TOptimizationResult> {
         if (command.condition !== undefined && ConditionAST.parse(command.condition, this.flags).toBoolean(sender, parameter)) {
             if (this.onRejectBoundCommand !== undefined)
                 this.onRejectBoundCommand(command, sender, parameter);
-            return false;
+            return false as OptimizationCanExecuteResultType<TOptimizationResult>;
         }
 
         const state = precalculatedState !== undefined ? precalculatedState.value : this.getCommandState(command, sender, parameter);
@@ -234,7 +234,7 @@ export class AbstractCommandManager implements ICommandManager, IComponent<Comma
             command.optimization!.execute(sender, parameter, state);
         }
 
-        return executeCommandServersidePromise ?? (sides != 0);
+        return executeCommandServersidePromise as OptimizationCanExecuteResultType<TOptimizationResult> ?? (sides != 0);
     }
 
     private getCommandState<TSender, TParameter, TCommandState>(

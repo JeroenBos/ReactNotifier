@@ -51,7 +51,7 @@ export interface ICommandManager extends IComponent<CommandManagerProps, Command
     handleKeyDown(sender: Sender, e: React.KeyboardEvent): void;
     handleKeyUp(sender: Sender, e: React.KeyboardEvent): void
 
-    executeCommandByNameIfPossible(commandName: string, sender: Sender, e?: CommandParameter): void;
+    executeCommandByNameIfPossible(commandName: string, sender: Sender, e?: CommandParameter): boolean | Promise<void>;
 }
 export interface IChangePropagator {
     open(initialization: Promise<any>): Promise<void>;
